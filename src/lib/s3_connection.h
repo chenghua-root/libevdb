@@ -6,11 +6,11 @@
 
 typedef struct S3Connection S3Connection;
 struct S3Connection {
-  uint64_t                      magic;
-  struct       ev_loop          *loop;
+  uint64_t        magic;
+  struct ev_loop  *loop;
 
-  ev_io                         read_watcher;
-  ev_io                         write_watcher;
+  ev_io           read_watcher;
+  ev_io           write_watcher;
 };
 
 #endif
