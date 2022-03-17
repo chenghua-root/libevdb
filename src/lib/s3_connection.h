@@ -9,6 +9,7 @@ struct S3Connection {
   uint64_t        magic;
   struct ev_loop  *loop;
 
+  int             fd;
   ev_io           read_watcher;
   ev_io           write_watcher;
 };

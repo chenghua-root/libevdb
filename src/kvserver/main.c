@@ -1,11 +1,14 @@
+#include <arpa/inet.h>
+#include <errno.h>
+#include <netinet/in.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <errno.h>
 #include <sys/types.h>
-#include <netinet/in.h>
 #include <sys/socket.h>
+#include <unistd.h>
 
 #include "lib/s3_connection.h"
 
@@ -17,7 +20,7 @@ struct ev_loop *io_loops[EV_IO_LOOP_NUM] = {NULL};
 int64_t accept_cnt = 0;
 
 void ev_loop_multi_create();
-void ev_loop_do_create(void *arg);
+void* ev_loop_do_create(void *arg);
 int  create_socket();
 void accept_socket_cb(struct ev_loop *loop, ev_io *w, int revents);
 void recv_socket_cb(struct ev_loop *loop, ev_io *w, int revents);
@@ -46,8 +49,8 @@ void ev_loop_multi_create() {
     pthread_t threads[EV_IO_LOOP_NUM];
     int ret = 0;
     for (int i = 0; i < EV_IO_LOOP_NUM; ++i) {
-        int j = i;
-        ret = pthread_create(&threads[i], NULL, ev_loop_do_create, j);
+        uint64_t j = i;
+        ret = pthread_create(&threads[i], NULL, ev_loop_do_create, (void*)j);
         if (ret != 0) {
             printf("pthread create fail, ret=%d, errno=%d", ret, errno);
             break;
@@ -64,17 +67,17 @@ static void repeate_hook(EV_P_ ev_timer *w, int revents) {
     printf("repeate revents=%d\n", revents);
 }
 
-void ev_loop_do_create(void *arg) {
+void* ev_loop_do_create(void *arg) {
     int64_t idx = (int64_t) arg;
     if (idx < 0 || idx >= EV_IO_LOOP_NUM) {
         printf("loop idx invalid, idx=%d\n", idx);
-        return;
+        return NULL;
     }
 
     struct ev_loop *loop = ev_loop_new(EVBACKEND_EPOLL);
     if (loop == NULL) {
         perror("new ev loop fail.");
-        return;
+        return NULL;
     }
     io_loops[idx] = loop;
     printf("create io ev loop, idx=%d, loop=%ld\n", idx, (uint64_t*)loop);
@@ -126,7 +129,7 @@ void accept_socket_cb(struct ev_loop *loop, ev_io *w, int revents) {
     int s = w->fd;
     struct sockaddr_in sin;
     socklen_t addrlen = sizeof(struct sockaddr);
-    do{
+    do {
         fd = accept(s, (struct sockaddr *)&sin, &addrlen);
         if(fd > 0) {
             break;
@@ -187,7 +190,7 @@ void write_socket_cb(struct ev_loop *loop, ev_io *w, int revents) {
 
     snprintf(buf, MAX_BUF_LEN - 1, "this is test message from libev\n");
 
-    write(w->fd, buf, strlen(buf), 0);
+    send(w->fd, buf, strlen(buf), 0);
 
     ev_io_stop(loop, w);
     ev_io_init(w, recv_socket_cb, w->fd, EV_READ);
