@@ -16,5 +16,5 @@ struct ev_loop *loop = ev_default_loop(0);
 ## protobuf-c
 ```
 export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
+protoc --c_out=. s3_packet_header.proto
 ```
-protoc --c_out=. student.proto

@@ -31,6 +31,7 @@ find_package(Threads REQUIRED)
 target_link_libraries(libevkv Threads::Threads)
 
 target_link_libraries(libevkv -lev)
+target_link_libraries(libevkv -lprotobuf-c)
 
 # 指定生成路径
 set (EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)

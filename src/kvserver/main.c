@@ -11,6 +11,7 @@
 #include <unistd.h>
 
 #include "lib/s3_connection.h"
+#include "lib/s3_packet_header.pb-c.h"
 
 #define PORT 9000
 #define IP "127.0.0.1"
@@ -63,8 +64,7 @@ static void repeate_hook(EV_P_ ev_timer *w, int revents) {
     (void) w;
     (void) revents;
     (void) loop;
-
-    printf("repeate revents=%d\n", revents);
+    printf("----------------------repeate revents=%d\n", revents); // what is revents?
 }
 
 void* ev_loop_do_create(void *arg) {
@@ -83,11 +83,19 @@ void* ev_loop_do_create(void *arg) {
     printf("create io ev loop, idx=%d, loop=%ld\n", idx, (uint64_t*)loop);
 
     ev_timer wtimer;
-    ev_timer_init(&wtimer, repeate_hook, 5.5, 0.);
-    ev_timer_start(loop, &wtimer);
+    ev_timer_init(&wtimer, repeate_hook, 3., 20.);
+    ev_timer_again(loop, &wtimer);
 
-    int ret = ev_run(loop, 0); // before start run, at least regist one watcher
+    /*
+     * FIXME:
+     *  before start run, at least regist one watcher.
+     *  if regist a timer watcher, would WAIT the timer watcher callback,
+     *  and then the io watcher would be work.
+     *
+     */
+    int ret = ev_run(loop, 0);
     printf("io ev loop run over, ret=%d, errno=%d\n", ret, errno);
+    ev_timer_stop(loop, &wtimer);
     ev_loop_destroy(loop);
 }
 
@@ -140,7 +148,7 @@ void accept_socket_cb(struct ev_loop *loop, ev_io *w, int revents) {
         }
     } while(1);
 
-    struct ev_loop *io_loop = io_loops[accept_cnt++ % EV_IO_LOOP_NUM]; // TODO accept_cnt atomic
+    struct ev_loop *io_loop = io_loops[accept_cnt++ % EV_IO_LOOP_NUM]; // FIXME: accept_cnt atomic
     printf("accept_cnt=%d, io_loop=%ld\n", accept_cnt, (uint64_t*)io_loop);
 
     ev_io *accept_watcher = malloc(sizeof(ev_io));
@@ -159,7 +167,20 @@ void recv_socket_cb(struct ev_loop *loop, ev_io *w, int revents) {
         ret = recv(w->fd, buf, MAX_BUF_LEN - 1, 0);
 
         if (ret > 0) {
-            printf("recv len=%d message:%s \n", ret, buf);
+            /*
+             * FIXME:
+             *   解包，必须提供长度参数。但同一个protobuf结构，成员值不同时，其长度不一.
+             */
+            S3PacketHeader *header = s3_packet_header__unpack(NULL, ret, buf);
+
+            printf("recv len=%d message: header.pcode=%d, .session_id=%ld, .data_len=%ld\n",
+                    ret,
+                    header->pcode,
+                    header->session_id,
+                    header->data_len);
+
+            s3_packet_header__free_unpacked(header, NULL); // 释放空间
+
             ev_io_stop(loop, w);
             ev_io_init(w, write_socket_cb, w->fd, EV_WRITE);
             ev_io_start(loop, w);
