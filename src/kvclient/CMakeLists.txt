@@ -6,7 +6,7 @@ link_directories (
     ${CMAKE_BINARY_DIR}/src/lib
 )
 
-set_property(TARGET kvclient PROPERTY C_STANDARD 99)
+# set_property(TARGET kvclient PROPERTY C_STANDARD 99)
 
 target_link_libraries(kvclient lib)
 

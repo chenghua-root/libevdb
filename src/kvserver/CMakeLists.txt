@@ -21,11 +21,12 @@ link_directories (
 
 # 指定生成目标
 add_executable(libevkv ${SRC_LIST})
-set_property(TARGET libevkv PROPERTY C_STANDARD 99)
+# set_property(TARGET libevkv PROPERTY C_STANDARD 99)
 
 # 添加链接库
 target_link_libraries(libevkv lib)
 
+# lpthread
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 target_link_libraries(libevkv Threads::Threads)

@@ -6,12 +6,24 @@
 
 typedef struct S3Connection S3Connection;
 struct S3Connection {
-  uint64_t        magic;
   struct ev_loop  *loop;
 
   int             fd;
   ev_io           read_watcher;
   ev_io           write_watcher;
 };
+
+#define s3_connection_null { \
+    .loop = NULL,            \
+    .fd = 0,                 \
+}
+
+S3Connection *s3_connection_construct();
+void s3_connection_desconstruct(S3Connection *conn);
+int s3_connection_init(S3Connection *conn, struct ev_loop *loop, int fd, ev_io read_watcher, ev_io write_watcher);
+void s3_connection_destroy(S3Connection *conn);
+
+int s3_connection_create_listen_and_io_loop(struct ev_loop *loop);
+void s3_connection_loop_run();
 
 #endif

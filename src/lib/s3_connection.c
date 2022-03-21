@@ -1,58 +1,98 @@
-#include <arpa/inet.h>
+#include "lib/s3_connection.h"
+
 #include <errno.h>
-#include <netinet/in.h>
 #include <pthread.h>
-#include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
-#include <stdint.h>
-#include <sys/types.h>
-#include <sys/socket.h>
+#include <stdio.h>
+#include <strings.h>
 #include <unistd.h>
 
-#include "lib/s3_connection.h"
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
+
 #include "lib/s3_packet_header.pb-c.h"
 
 #define PORT 9000
 #define IP "127.0.0.1"
 
 #define EV_IO_LOOP_NUM 4
+pthread_t io_threads[EV_IO_LOOP_NUM];
 struct ev_loop *io_loops[EV_IO_LOOP_NUM] = {NULL};
 int64_t accept_cnt = 0;
 
-void ev_loop_multi_create();
-void* ev_loop_do_create(void *arg);
-int  create_socket();
-void accept_socket_cb(struct ev_loop *loop, ev_io *w, int revents);
-void recv_socket_cb(struct ev_loop *loop, ev_io *w, int revents);
-void write_socket_cb(struct ev_loop *loop, ev_io *w, int revents);
+S3Connection *s3_connection_construct() {
+    S3Connection *conn = malloc(sizeof(S3Connection));
+    if (conn != NULL) {
+        *conn = (S3Connection)s3_connection_null;
+    }
+    return conn;
+}
 
-int main(int argc, char *argv[]) {
-    ev_loop_multi_create();
+void s3_connection_desconstruct(S3Connection *conn) {
+    if (conn != NULL) {
+        s3_connection_destroy(conn);
+        free(conn);
+    }
+}
 
-    int s = create_socket();
-    if (s < 0) {
+int s3_connection_init(S3Connection *conn, struct ev_loop *loop, int fd,
+                       ev_io read_watcher, ev_io write_watcher) {
+    conn->loop          = loop;
+    conn->fd            = fd;
+    conn->read_watcher  = read_watcher;
+    conn->write_watcher = write_watcher;
+}
+
+void s3_connection_destroy(S3Connection *conn) {
+    if (conn != NULL) {
+        close(conn->fd);
+        ev_io_stop(conn->loop, &conn->read_watcher);
+        ev_io_stop(conn->loop, &conn->write_watcher);
+    }
+}
+
+
+static void s3_connection_create_multi_io_loop();
+static void *s3_connection_do_create_io_loop(void *arg);
+static void s3_connection_ev_loop_timer_hook(EV_P_ ev_timer *w, int revents);
+
+static int s3_connection_create_socket();
+static void s3_connection_accept_socket_cb(struct ev_loop *loop, ev_io *w, int revents);
+static void s3_connection_recv_socket_cb(struct ev_loop *loop, ev_io *w, int revents);
+static void s3_connection_write_socket_cb(struct ev_loop *loop, ev_io *w, int revents);
+
+int s3_connection_create_listen_and_io_loop(struct ev_loop *loop) {
+    int listenfd = 0;
+    ev_io lwatcher;
+
+    s3_connection_create_multi_io_loop();
+
+    listenfd = s3_connection_create_socket();
+    if (listenfd < 0) {
+        perror("create listenfd fail\n");
         return -1;
     }
 
-    struct ev_loop *loop = EV_DEFAULT;
-    ev_io ev_listen_watcher;
-
-    ev_io_init(&ev_listen_watcher, accept_socket_cb, s, EV_READ);
-    ev_io_start(loop, &ev_listen_watcher);
+    ev_io_init(&lwatcher, s3_connection_accept_socket_cb, listenfd, EV_READ);
+    ev_io_start(loop, &lwatcher);
 
     ev_run(loop, 0);
 
     return 0;
 }
 
-void ev_loop_multi_create() {
-    pthread_t threads[EV_IO_LOOP_NUM];
+void s3_connection_loop_run(struct ev_loop *loop) {
+    ev_run(loop, 0);
+}
+
+static void s3_connection_create_multi_io_loop() {
     int ret = 0;
     for (int i = 0; i < EV_IO_LOOP_NUM; ++i) {
         uint64_t j = i;
-        ret = pthread_create(&threads[i], NULL, ev_loop_do_create, (void*)j);
-        if (ret != 0) {
+        ret = pthread_create(&io_threads[i], NULL, s3_connection_do_create_io_loop, (void*)j);
+        if (ret != 0) { // TODO: create fail
             printf("pthread create fail, ret=%d, errno=%d", ret, errno);
             break;
         }
@@ -60,14 +100,7 @@ void ev_loop_multi_create() {
     usleep(500);
 }
 
-static void repeate_hook(EV_P_ ev_timer *w, int revents) {
-    (void) w;
-    (void) revents;
-    (void) loop;
-    printf("----------------------repeate revents=%d\n", revents); // what is revents?
-}
-
-void* ev_loop_do_create(void *arg) {
+static void *s3_connection_do_create_io_loop(void *arg) {
     int64_t idx = (int64_t) arg;
     if (idx < 0 || idx >= EV_IO_LOOP_NUM) {
         printf("loop idx invalid, idx=%d\n", idx);
@@ -83,7 +116,7 @@ void* ev_loop_do_create(void *arg) {
     printf("create io ev loop, idx=%d, loop=%ld\n", idx, (uint64_t*)loop);
 
     ev_timer wtimer;
-    ev_timer_init(&wtimer, repeate_hook, 3., 20.);
+    ev_timer_init(&wtimer, s3_connection_ev_loop_timer_hook, 0., 10.);
     ev_timer_again(loop, &wtimer);
 
     /*
@@ -94,12 +127,20 @@ void* ev_loop_do_create(void *arg) {
      *
      */
     int ret = ev_run(loop, 0);
-    printf("io ev loop run over, ret=%d, errno=%d\n", ret, errno);
+    printf("io loop run over, loop idx=%d, ret=%d\n", idx, ret);
     ev_timer_stop(loop, &wtimer);
     ev_loop_destroy(loop);
 }
 
-int create_socket() {
+static void s3_connection_ev_loop_timer_hook(EV_P_ ev_timer *w, int revents) {
+    (void) w;
+    (void) revents;
+    (void) loop;
+    printf("----------------------ev timer. revents=%d\n", revents); // what is revents?
+}
+
+
+static int s3_connection_create_socket() {
     struct sockaddr_in addr;
     int s;
     s = socket(AF_INET, SOCK_STREAM, 0);
@@ -132,7 +173,7 @@ int create_socket() {
     return s;
 }
 
-void accept_socket_cb(struct ev_loop *loop, ev_io *w, int revents) {
+static void s3_connection_accept_socket_cb(struct ev_loop *loop, ev_io *w, int revents) {
     int fd;
     int s = w->fd;
     struct sockaddr_in sin;
@@ -149,17 +190,17 @@ void accept_socket_cb(struct ev_loop *loop, ev_io *w, int revents) {
     } while(1);
 
     struct ev_loop *io_loop = io_loops[accept_cnt++ % EV_IO_LOOP_NUM]; // FIXME: accept_cnt atomic
-    printf("accept_cnt=%d, io_loop=%ld\n", accept_cnt, (uint64_t*)io_loop);
+    printf("accept_cnt=%ld, io_loop=%ld\n", accept_cnt, (uint64_t*)io_loop);
 
     ev_io *accept_watcher = malloc(sizeof(ev_io));
     memset(accept_watcher, 0x00, sizeof(ev_io));
 
-    ev_io_init(accept_watcher, recv_socket_cb, fd, EV_READ);
+    ev_io_init(accept_watcher, s3_connection_recv_socket_cb, fd, EV_READ);
     ev_io_start(io_loop, accept_watcher);
 }
 
 #define MAX_BUF_LEN 1024
-void recv_socket_cb(struct ev_loop *loop, ev_io *w, int revents) {
+static void s3_connection_recv_socket_cb(struct ev_loop *loop, ev_io *w, int revents) {
     char buf[MAX_BUF_LEN] = {0};
     int ret = 0;
 
@@ -182,7 +223,7 @@ void recv_socket_cb(struct ev_loop *loop, ev_io *w, int revents) {
             s3_packet_header__free_unpacked(header, NULL); // 释放空间
 
             ev_io_stop(loop, w);
-            ev_io_init(w, write_socket_cb, w->fd, EV_WRITE);
+            ev_io_init(w, s3_connection_write_socket_cb, w->fd, EV_WRITE);
             ev_io_start(loop, w);
 
             return;
@@ -206,7 +247,7 @@ void recv_socket_cb(struct ev_loop *loop, ev_io *w, int revents) {
     free(w);
 }
 
-void write_socket_cb(struct ev_loop *loop, ev_io *w, int revents) {
+static void s3_connection_write_socket_cb(struct ev_loop *loop, ev_io *w, int revents) {
     char buf[MAX_BUF_LEN] = {0};
 
     snprintf(buf, MAX_BUF_LEN - 1, "this is test message from libev\n");
@@ -214,6 +255,6 @@ void write_socket_cb(struct ev_loop *loop, ev_io *w, int revents) {
     send(w->fd, buf, strlen(buf), 0);
 
     ev_io_stop(loop, w);
-    ev_io_init(w, recv_socket_cb, w->fd, EV_READ);
+    ev_io_init(w, s3_connection_recv_socket_cb, w->fd, EV_READ);
     ev_io_start(loop, w);
 }
