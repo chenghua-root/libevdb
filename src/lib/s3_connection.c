@@ -37,12 +37,12 @@ void s3_connection_desconstruct(S3Connection *conn) {
     }
 }
 
-int s3_connection_init(S3Connection *conn, struct ev_loop *loop, int fd,
-                       ev_io read_watcher, ev_io write_watcher) {
+int s3_connection_init(S3Connection *conn, struct ev_loop *loop, int fd) {
     conn->loop          = loop;
     conn->fd            = fd;
-    conn->read_watcher  = read_watcher;
-    conn->write_watcher = write_watcher;
+
+    conn->read_watcher.data = conn;
+    conn->write_watcher.data = conn;
 }
 
 void s3_connection_destroy(S3Connection *conn) {
@@ -162,12 +162,10 @@ static int s3_connection_create_socket() {
         return -1;
     }
 
-
     if(listen(s, 32) == -1){
         perror("listen socket error\n");
         return -1;
     }
-
     printf("bind %s, listen %d\n", IP, PORT);
 
     return s;
@@ -192,40 +190,38 @@ static void s3_connection_accept_socket_cb(struct ev_loop *loop, ev_io *w, int r
     struct ev_loop *io_loop = io_loops[accept_cnt++ % EV_IO_LOOP_NUM]; // FIXME: accept_cnt atomic
     printf("accept_cnt=%ld, io_loop=%ld\n", accept_cnt, (uint64_t*)io_loop);
 
-    ev_io *accept_watcher = malloc(sizeof(ev_io));
-    memset(accept_watcher, 0x00, sizeof(ev_io));
+    S3Connection *conn = s3_connection_construct();
+    s3_connection_init(conn, io_loop, fd);
 
-    ev_io_init(accept_watcher, s3_connection_recv_socket_cb, fd, EV_READ);
-    ev_io_start(io_loop, accept_watcher);
+    ev_io_init(&conn->read_watcher, s3_connection_recv_socket_cb, fd, EV_READ);
+    ev_io_init(&conn->write_watcher, s3_connection_write_socket_cb, fd, EV_WRITE);
+
+    ev_io_start(io_loop, &conn->read_watcher);
 }
 
 #define MAX_BUF_LEN 1024
 static void s3_connection_recv_socket_cb(struct ev_loop *loop, ev_io *w, int revents) {
     char buf[MAX_BUF_LEN] = {0};
     int ret = 0;
+    S3Connection *conn = (S3Connection*)w->data;
 
     do {
         ret = recv(w->fd, buf, MAX_BUF_LEN - 1, 0);
-
         if (ret > 0) {
             /*
              * FIXME:
              *   解包，必须提供长度参数。但同一个protobuf结构，成员值不同时，其长度不一.
+             *   替换为其它数据交换格式
              */
             S3PacketHeader *header = s3_packet_header__unpack(NULL, ret, buf);
-
             printf("recv len=%d message: header.pcode=%d, .session_id=%ld, .data_len=%ld\n",
                     ret,
                     header->pcode,
                     header->session_id,
                     header->data_len);
-
             s3_packet_header__free_unpacked(header, NULL); // 释放空间
 
-            ev_io_stop(loop, w);
-            ev_io_init(w, s3_connection_write_socket_cb, w->fd, EV_WRITE);
-            ev_io_start(loop, w);
-
+            ev_io_start(loop, &conn->write_watcher);
             return;
         }
 
@@ -233,13 +229,11 @@ static void s3_connection_recv_socket_cb(struct ev_loop *loop, ev_io *w, int rev
             printf("remote socket closed\n");
             break;
         }
-
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
             continue;
         }
 
         break;
-
     } while(1);
 
     close(w->fd);
@@ -251,10 +245,6 @@ static void s3_connection_write_socket_cb(struct ev_loop *loop, ev_io *w, int re
     char buf[MAX_BUF_LEN] = {0};
 
     snprintf(buf, MAX_BUF_LEN - 1, "this is test message from libev\n");
-
     send(w->fd, buf, strlen(buf), 0);
-
     ev_io_stop(loop, w);
-    ev_io_init(w, s3_connection_recv_socket_cb, w->fd, EV_READ);
-    ev_io_start(loop, w);
 }

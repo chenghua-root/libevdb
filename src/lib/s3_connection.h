@@ -16,11 +16,13 @@ struct S3Connection {
 #define s3_connection_null { \
     .loop = NULL,            \
     .fd = 0,                 \
+    .read_watcher = {0},     \
+    .write_watcher = {0},    \
 }
 
 S3Connection *s3_connection_construct();
 void s3_connection_desconstruct(S3Connection *conn);
-int s3_connection_init(S3Connection *conn, struct ev_loop *loop, int fd, ev_io read_watcher, ev_io write_watcher);
+int s3_connection_init(S3Connection *conn, struct ev_loop *loop, int fd);
 void s3_connection_destroy(S3Connection *conn);
 
 int s3_connection_create_listen_and_io_loop(struct ev_loop *loop);
