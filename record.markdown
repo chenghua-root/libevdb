@@ -21,8 +21,13 @@ pprof ./bin-unittest/libevkv_test "/tmp/libevkv_test.25357._main_-end.heap" --in
 env MALLOC_CHECK_=3 ./bin-unittest/libevkv_test
 ```
 
+### 单测覆盖率
+```
+SET(CMAKE_C_FLAGS_COVERAGE "--coverage") 等于-fprofile-arcs -ftest-coverage
+SET(CMAKE_EXE_LINKER_FLAGS "--coverage") 等于-lgcov
+```
+
 ## libev
-Install
 
 ### 默认ev\_loop
 ```
@@ -37,4 +42,4 @@ struct ev_loop *loop = ev_default_loop(0);
 ```
 protoc --c_out=. s3_packet_header.proto
 ```
-同一结构体的protobuf编码长度不固定，不适合做网络包协议
+同一结构体的protobuf编码长度不固定，不适合做网络packet协议，适合做RPC协议

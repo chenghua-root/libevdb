@@ -4,11 +4,6 @@
 # 添加编译选项宏
 # add_definitions(-DEV_MULTIPLICITY)
 
-# 支持gdb
-SET(CMAKE_BUILD_TYPE "Debug")
-SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g -ggdb")
-SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
-
 # 查找当前目录下的所有源文件
 aux_source_directory(. SRC_LIST)
 
