@@ -15,6 +15,6 @@ struct ev_loop *loop = ev_default_loop(0);
 
 ## protobuf-c
 ```
-export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
 protoc --c_out=. s3_packet_header.proto
 ```
+同一结构体的protobuf编码长度不固定，不适合做网络包协议
