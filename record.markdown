@@ -1,5 +1,25 @@
 ## cmake
-Install
+
+### 内存泄露检测
+编译时添加-ltcmalloc:
+```
+target_link_libraries(target -ltcmalloc)
+```
+
+获取svg:
+```
+env HEAPCHECK=normal ./bin-unittest/libevkv_test
+
+pprof ./bin-unittest/libevkv_test "/tmp/libevkv_test.25357._main_-end.heap" --inuse_objects --lines --heapcheck  --edgefraction=1e-10 --nodefraction=1e-10 --svg >> libevkv_mem_leak.svg
+```
+
+### 指针检测
+如内存重复释放检测
+
+需注释掉-ltcmalloc
+```
+env MALLOC_CHECK_=3 ./bin-unittest/libevkv_test
+```
 
 ## libev
 Install

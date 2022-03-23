@@ -6,4 +6,5 @@ TEST(test_connection, connection_init) {
     ASSERT_NE(NULL, conn);
 
     s3_connection_desconstruct(conn);
+    s3_connection_desconstruct(conn);
 }

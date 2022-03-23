@@ -13,6 +13,7 @@ add_executable(libevkv_test ${DIR_UNITTEST_SRCS})
 target_link_libraries(libevkv_test
     -lev
     -lprotobuf-c
+    -ltcmalloc
     ctest
     lib
 )
