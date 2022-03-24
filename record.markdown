@@ -38,6 +38,10 @@ struct ev_loop *loop = ev_default_loop(0);
 ### ev\_run
 若loop未注册任何watcher，则ev\_run(loop, 0)会直接返回ret=0, errno=0
 
+### multi loop
+参考：using libev with multiple threads http://lists.schmorp.de/pipermail/libev/2013q1/002094.html
+注意：当工作线程run ev loop时，不能在其它线程向其注册watcher, 这样不是线程安全的
+
 ## protobuf-c
 ```
 protoc --c_out=. s3_packet_header.proto

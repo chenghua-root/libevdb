@@ -21,6 +21,7 @@
 pthread_t io_threads[EV_IO_LOOP_NUM];
 struct ev_loop *io_loops[EV_IO_LOOP_NUM] = {NULL};
 int64_t accept_cnt = 0;
+int pipefds[EV_IO_LOOP_NUM][2];
 
 S3Connection *s3_connection_construct() {
     S3Connection *conn = malloc(sizeof(S3Connection));
@@ -100,6 +101,25 @@ static void s3_connection_create_multi_io_loop() {
     usleep(500);
 }
 
+static void s3_connection_pipe_read_cb(struct ev_loop *loop, ev_io *w, int revents) {
+    int socket_fd;
+    int ret = read(w->fd, &socket_fd, sizeof(int));
+    printf("read socket fd=%d, ret=%d\n", socket_fd, ret);
+
+    struct ev_loop *io_loop = io_loops[accept_cnt % EV_IO_LOOP_NUM]; // FIXME: accept_cnt atomic
+    printf("accept_cnt=%ld, io_loop=%ld\n", accept_cnt, (uint64_t*)io_loop);
+
+    S3Connection *conn = s3_connection_construct();
+    s3_connection_init(conn, io_loop, socket_fd);
+    conn->idx = accept_cnt++;
+
+    ev_io_init(&conn->read_watcher, s3_connection_recv_socket_cb, socket_fd, EV_READ);
+    ev_io_init(&conn->write_watcher, s3_connection_write_socket_cb, socket_fd, EV_WRITE);
+
+    ev_io_start(io_loop, &conn->read_watcher);
+
+}
+
 static void *s3_connection_do_create_io_loop(void *arg) {
     int64_t idx = (int64_t) arg;
     if (idx < 0 || idx >= EV_IO_LOOP_NUM) {
@@ -115,9 +135,20 @@ static void *s3_connection_do_create_io_loop(void *arg) {
     io_loops[idx] = loop;
     printf("create io ev loop, idx=%d, loop=%ld\n", idx, (uint64_t*)loop);
 
-    ev_timer wtimer;
-    ev_timer_init(&wtimer, s3_connection_ev_loop_timer_hook, 0., 10.);
-    ev_timer_again(loop, &wtimer);
+    //ev_timer wtimer;
+    //ev_timer_init(&wtimer, s3_connection_ev_loop_timer_hook, 0., 10.);
+    //ev_timer_again(loop, &wtimer);
+
+    int ret = pipe(pipefds[idx]);
+    if (ret != 0) {
+        printf("pipe fail. ret=%d, errno=%d\n", ret, errno);
+        exit(1);
+    }
+    // TODO pipefds[idx][0] set non block
+
+    ev_io pipe_read_watcher;
+    ev_io_init(&pipe_read_watcher, s3_connection_pipe_read_cb, pipefds[idx][0], EV_READ);
+    ev_io_start(loop, &pipe_read_watcher);
 
     /*
      * FIXME:
@@ -126,9 +157,10 @@ static void *s3_connection_do_create_io_loop(void *arg) {
      *  and then the io watcher would be work.
      *
      */
-    int ret = ev_run(loop, 0);
+    ret = ev_run(loop, 0);
     printf("io loop run over, loop idx=%d, ret=%d\n", idx, ret);
-    ev_timer_stop(loop, &wtimer);
+    //ev_timer_stop(loop, &wtimer);
+    ev_io_stop(loop, &pipe_read_watcher);
     ev_loop_destroy(loop);
 }
 
@@ -187,16 +219,9 @@ static void s3_connection_accept_socket_cb(struct ev_loop *loop, ev_io *w, int r
         }
     } while(1);
 
-    struct ev_loop *io_loop = io_loops[accept_cnt++ % EV_IO_LOOP_NUM]; // FIXME: accept_cnt atomic
-    printf("accept_cnt=%ld, io_loop=%ld\n", accept_cnt, (uint64_t*)io_loop);
-
-    S3Connection *conn = s3_connection_construct();
-    s3_connection_init(conn, io_loop, fd);
-
-    ev_io_init(&conn->read_watcher, s3_connection_recv_socket_cb, fd, EV_READ);
-    ev_io_init(&conn->write_watcher, s3_connection_write_socket_cb, fd, EV_WRITE);
-
-    ev_io_start(io_loop, &conn->read_watcher);
+    int pipe_write_fd = pipefds[accept_cnt % EV_IO_LOOP_NUM][1]; // FIXME: accept_cnt atomic
+    write(pipe_write_fd, &fd, sizeof(fd));
+    usleep(100);
 }
 
 #define MAX_BUF_LEN 1024
@@ -214,11 +239,12 @@ static void s3_connection_recv_socket_cb(struct ev_loop *loop, ev_io *w, int rev
              *   替换为其它数据交换格式
              */
             S3PacketHeader *header = s3_packet_header__unpack(NULL, ret, buf);
-            printf("recv len=%d message: header.pcode=%d, .session_id=%ld, .data_len=%ld\n",
+            printf("recv len=%d message: header.pcode=%d, .session_id=%ld, .data_len=%ld, conn idx=%d\n",
                     ret,
                     header->pcode,
                     header->session_id,
-                    header->data_len);
+                    header->data_len,
+                    conn->idx);
             s3_packet_header__free_unpacked(header, NULL); // 释放空间
 
             ev_io_start(loop, &conn->write_watcher);
@@ -238,7 +264,7 @@ static void s3_connection_recv_socket_cb(struct ev_loop *loop, ev_io *w, int rev
 
     close(w->fd);
     ev_io_stop(loop, w);
-    free(w);
+    s3_connection_desconstruct(conn);
 }
 
 static void s3_connection_write_socket_cb(struct ev_loop *loop, ev_io *w, int revents) {

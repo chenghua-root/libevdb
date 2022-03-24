@@ -6,7 +6,8 @@
 
 typedef struct S3Connection S3Connection;
 struct S3Connection {
-  struct ev_loop  *loop;
+  struct ev_loop *loop;
+  int            idx;
 
   int             fd;
   ev_io           read_watcher;
@@ -15,6 +16,7 @@ struct S3Connection {
 
 #define s3_connection_null { \
     .loop = NULL,            \
+    .idx = 0,                \
     .fd = 0,                 \
     .read_watcher = {0},     \
     .write_watcher = {0},    \
