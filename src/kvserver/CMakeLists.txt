@@ -20,6 +20,7 @@ target_link_libraries(libevkv
     -lev
     -lprotobuf-c
     lib
+    logc
 )
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
