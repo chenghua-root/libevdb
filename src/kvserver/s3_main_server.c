@@ -4,6 +4,7 @@
 
 int main(int argc, char *argv[]) {
     s3_init_log();
+    s3_init_net();
 
     log_info("start run ev loop...");
     struct ev_loop *loop = EV_DEFAULT;
