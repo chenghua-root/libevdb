@@ -1,0 +1,7 @@
+build
+bin
+bin-unittest
+build-unittest
+*.svg
+*.log
+.*

@@ -13,13 +13,26 @@ then
 
   # release
   echo -e "\033[33m begin compile \033[0m"
-  rm build bin -rf && mkdir -p build bin
+  rm bin -rf && mkdir -p bin
 
   (pushd build                                          \
       && cmake .. -DCMAKE_BUILD_TYPE="Release"          \
       && make -j2                                       \
       && popd) || die make "build"
   echo -e "\033[33m end compile \033[0m"
+
+elif [ "x$1" == "xrelease" ]
+then
+
+  # release
+  echo -e "\033[33m begin compile release \033[0m"
+  rm build bin -rf && mkdir -p build bin
+
+  (pushd build                                          \
+      && cmake .. -DCMAKE_BUILD_TYPE="Release"          \
+      && make -j2                                       \
+      && popd) || die make "build"
+  echo -e "\033[33m end compile release \033[0m"
 
 elif [ "x$1" == "xunittest" ]
 then
@@ -55,5 +68,5 @@ then
       && popd) || die "run coverage"
 
 else
-    echo "invalid argument. you could run it as: ./autobuild.sh [unittest|coverage]"
+    echo "invalid argument. you could run it as: ./autobuild.sh [release|unittest|coverage]"
 fi

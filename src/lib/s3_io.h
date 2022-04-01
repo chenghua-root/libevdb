@@ -1,50 +1,52 @@
-typedef struct S3IO             S3IO;
-struct S3IO {
-  int                           io_thread_cnt;
-  /*
-  S3MemPool                     *pool;
-  S3ListHead                    sio_list_node;
-  S3Atomic                      lock;
+#ifndef S3_LIB_IO_H_
+#define S3_LIB_IO_H_
 
-  struct S3Listen               *listen;
-  int                           io_thread_count;
-  struct S3BaseThreadPool       *io_thread_pool;
-  void                          *user_data;
+#include <ev.h>
+#include <stdint.h>
+#include "lib/s3_list.h"
+#include "lib/s3_message.h"
 
-  uint32_t                      stoped : 1;
-  uint32_t                      started : 1;
-  uint32_t                      tcp_cork : 1;
-  uint32_t                      tcp_nodelay : 1;
-  uint32_t                      tcp_defer_accept : 1;
-  uint32_t                      affinity_enable : 1;
-  uint32_t                      no_redispatch : 1;
-  uint32_t                      do_signal : 1;
-  uint32_t                      block_thread_signal : 1;
-  uint32_t                      support_ipv6 : 1;
-  uint32_t                      use_accept4 : 1;
-  uint32_t                      no_delayack : 1;
-  uint32_t                      no_force_destroy: 1;
+#define MAX_IO_THREAD_CNT 8
 
-  int32_t                       send_qlen;
-  int32_t                       force_destroy_second;
-  sigset_t                      block_thread_sigset;
-  int                           listen_backlog;
-  uint32_t                      accept_count;
+typedef void *(S3IOThreadStartRoutine) (void *);
 
-  ev_tstamp                     start_time;
-  struct S3Summary              *sio_summary;
-  */
+typedef struct S3IOThread S3IOThread;
+struct S3IOThread {
+    pthread_t              tid;
+    int                    id;
+    S3List                 conn_list;
+    struct ev_loop         *loop;
+    int                    pipefd[2];
+    ev_io                  pipe_read_watcher; // listen线程把新连接fd通过pipe发送到此watcher
+    uint64_t               conn_cnt;
 };
-#define s3_s3io_null {  \
+
+typedef struct S3Listen S3Listen;
+struct S3Listen {
+    int                 listenfd;
+    struct ev_loop      *listen_loop;
+    ev_io               lwatcher;
+};
+
+typedef struct S3IO     S3IO;
+struct S3IO {
+    int                 io_thread_cnt;
+    S3IOThread          ioths[MAX_IO_THREAD_CNT];
+    S3Listen            listen;
+    uint64_t            conn_cnt;
+};
+#define s3_io_null {    \
     .io_thread_cnt = 0, \
+    .ioths = {0},       \
 }
 
-S3IO *s3_s3io_construct();
-void s3_s3io_desconstruct(S3IO *s3io);
-int s3_s3io_init(S3IO *s3io, int io_thread_cnt);
-void s3_s3io_destroy(S3IO *s3io);
+S3IO *s3_io_construct();
+void s3_io_desconstruct(S3IO *s3io);
+int s3_io_init(S3IO *s3io, int io_thread_cnt);
+void s3_io_destroy(S3IO *s3io);
 
-S3IO *s3_s3io_create();
+S3IO *s3_io_create();
+void s3_io_start_run(S3IO *s3io);
 
 /*
  * 调用方可以定义或者选择网络IO处理动作(如接收，发送，编码，解码，处理等)，
@@ -52,23 +54,7 @@ S3IO *s3_s3io_create();
  */
 typedef struct S3IOHandler      S3IOHandler;
 struct S3IOHandler {
-  /*
-  void                         *(*decode)(struct S3Message *m);
-  int                           (*encode)(struct S3Request *r, void *packet);
-  S3IOProcessHandler            *process;
-  int                           (*batch_process)(struct S3Message *m);
-  S3IOCleanupHandler            *cleanup;
-  uint64_t                       (*get_packet_id)(struct S3Connection *c, void *packet);
-  int                           (*on_connect)(struct S3Connection *c);
-  int                           (*on_disconnect)(struct S3Connection *c);
-  int                           (*new_packet)(struct S3Connection *c);
-  int                           (*on_idle)(struct S3Connection *c);
-  int                           (*set_data)(struct S3Request *r, const char *data, int len);
-  void                          (*send_buf_done)(struct S3Request *r);
-  void                          (*sending_data)(struct S3Connection *c);
-  int                           (*send_data_done)(struct S3Connection *c);
-  int                           (*on_redispatch)(struct S3Connection *c);
-  int                           (*on_close)(struct S3Connection *c);
-  void                          *user_data, *user_data2;
-  */
+  void                         *(*decode)(S3Message *m);
 };
+
+#endif

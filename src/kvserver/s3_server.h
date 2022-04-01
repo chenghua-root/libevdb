@@ -13,8 +13,8 @@ struct S3Global {
 
 int s3_init_log();
 int s3_init_net();
+int s3_start_net();
 
-int s3_init();
 void s3_destroy();
 
 extern S3Global s3_g;

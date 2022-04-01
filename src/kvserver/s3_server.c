@@ -1,11 +1,15 @@
 #include "s3_server.h"
 
-S3Global s3_g = s3_global_null;
-FILE *g_log_fp = NULL;
+#include <ev.h>
+#include "s3_net_callback.h"
 
+S3Global s3_g = s3_global_null;
+static FILE *g_log_fp = NULL;
+
+/*****************************s3_init_log***************************/
 int s3_init_log() {
     log_set_level(0);
-    //log_set_quiet(true);
+    log_set_quiet(false);
 
     FILE *g_log_fp;
     g_log_fp = fopen("./libkv.log", "ab");
@@ -26,19 +30,28 @@ static void s3_destroy_log() {
     }
 }
 
+/*****************************s3_init_net***************************/
 int s3_init_net() {
-    s3_g.s3io = s3_s3io_create();
+    s3_g.s3io = s3_io_create();
 
-    //S3IOHandler *io_handler = &s3_g.io_handler;
+    S3IOHandler *io_handler = &s3_g.io_handler;
+    io_handler->decode = s3_net_decode;
+
+    log_info("init net succ...");
 
     return 0;
 }
 
-
-int s3_init() {
-    return 0;
+int s3_start_net() {
+    s3_io_start_run(s3_g.s3io);
 }
 
+static void s3_destroy_net() {
+}
+
+
+/*******************************s3_destroy*****************************/
 void s3_destroy() {
     s3_destroy_log();
+    s3_destroy_net();
 }

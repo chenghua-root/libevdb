@@ -29,6 +29,7 @@ struct S3ListHead {
 #define S3LISTHEAD(name) \
   struct S3ListHead name = S3_LIST_HEAD_INIT(name)
 
+#define s3_list_head_init init_s3_list_head
 #define s3_list_init init_s3_list_head
 static inline void init_s3_list_head(struct S3ListHead *list) {
   list->next = list;
