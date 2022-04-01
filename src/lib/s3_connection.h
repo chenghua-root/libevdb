@@ -23,7 +23,7 @@ struct S3Connection {
 }
 
 S3Connection *s3_connection_construct();
-void s3_connection_desconstruct(S3Connection *conn);
+void s3_connection_destruct(S3Connection *conn);
 int s3_connection_init(S3Connection *conn, struct ev_loop *loop, int fd);
 void s3_connection_destroy(S3Connection *conn);
 

@@ -14,10 +14,13 @@ int main(int argc, char *argv[]) {
 
     s3_init_net();
     s3_start_net();
-    while(1) {
+
+    s3_regist_signal();
+    while(s3_g.stop_flag == 0) {
         sleep(1);
     }
-    s3_destroy();
+
+    s3_global_destroy();
 
     return 0;
 }

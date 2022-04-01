@@ -25,7 +25,7 @@ S3Connection *s3_connection_construct() {
     return conn;
 }
 
-void s3_connection_desconstruct(S3Connection *conn) {
+void s3_connection_destruct(S3Connection *conn) {
     if (conn != NULL) {
         s3_connection_destroy(conn);
         free(conn);
@@ -87,7 +87,7 @@ void s3_connection_recv_socket_cb(struct ev_loop *loop, ev_io *w, int revents) {
 
     close(w->fd);
     ev_io_stop(loop, w);
-    s3_connection_desconstruct(conn);
+    s3_connection_destruct(conn);
 }
 
 void s3_connection_write_socket_cb(struct ev_loop *loop, ev_io *w, int revents) {

@@ -21,12 +21,16 @@ struct S3IOThread {
     uint64_t               conn_cnt;
 };
 
+void s3_io_thread_destroy();
+
 typedef struct S3Listen S3Listen;
 struct S3Listen {
     int                 listenfd;
-    struct ev_loop      *listen_loop;
+    struct ev_loop      *listen_loop; // DV_DEFAULT, should not destroy
     ev_io               lwatcher;
 };
+
+void s3_io_listen_destroy();
 
 typedef struct S3IO     S3IO;
 struct S3IO {

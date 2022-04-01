@@ -8,6 +8,7 @@
 #include "lib/s3_socket.h"
 #include "third/logc/log.h"
 
+/**********************************s3 io***********************************/
 S3IO *s3_io_construct() {
     S3IO *s3io = malloc(sizeof(S3IO));
     if (s3io != NULL) {
@@ -30,16 +31,20 @@ int s3_io_init(S3IO *s3io, int io_thread_cnt) {
 }
 
 void s3_io_destroy(S3IO *s3io) {
-    s3io->io_thread_cnt = 0;
+    s3_io_listen_destroy(s3io->listen);
+    s3_io_thread_destroy(s3io->ioths);
 }
 
-static void s3_ioth_recv_socket_cb(struct ev_loop *loop, ev_io *w, int revents) {
+
+/*********************************io routine**********************************/
+
+static void s3_pipe_recv_socket_cb(struct ev_loop *loop, ev_io *w, int revents) {
     S3IOThread *ioth = (S3IOThread*)w->data;
 
     int socket_fd;
     int ret = read(w->fd, &socket_fd, sizeof(int));
     assert(ret == sizeof(int));
-    log_info("read socket fd=%d, dispatch io thread id=%d\n", socket_fd, ioth->id);
+    log_info("read socket fd=%d, dispatch io thread id=%d", socket_fd, ioth->id);
 
     S3Connection *conn = s3_connection_construct();
     s3_connection_init(conn, ioth->loop, socket_fd);
@@ -63,10 +68,23 @@ static int s3_io_thread_init(S3IOThread *ioth, int id) {
     assert(ioth->loop != NULL);
 
     ioth->pipe_read_watcher.data = ioth;
-    ev_io_init(&ioth->pipe_read_watcher, s3_ioth_recv_socket_cb, ioth->pipefd[0], EV_READ);
+    ev_io_init(&ioth->pipe_read_watcher, s3_pipe_recv_socket_cb, ioth->pipefd[0], EV_READ);
     ev_io_start(ioth->loop, &ioth->pipe_read_watcher);
 
     return 0;
+}
+
+void s3_io_thread_destroy(S3IOThread *ioth) {
+    S3Connection *conn = NULL;
+    s3_list_for_each_entry(conn, &ioth->conn_list, list_node) {
+        s3_connection_destruct(conn);
+    }
+
+    ev_io_stop(ioth->loop, &ioth->pipe_read_watcher);
+    close(ioth->pipefd[0]);
+    close(ioth->pipefd[1]);
+
+    ev_loop_destroy(ioth->loop);
 }
 
 static void *s3_io_thread_start_rontine(void *arg) {
@@ -97,6 +115,8 @@ S3IO *s3_io_create() {
     return s3io;
 }
 
+/*********************************listen**********************************/
+
 static void s3_accept_socket_cb(struct ev_loop *loop, ev_io *w, int revents) {
     int fd;
     int listenfd = w->fd;
@@ -110,7 +130,7 @@ static void s3_accept_socket_cb(struct ev_loop *loop, ev_io *w, int revents) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
             continue;
         }
-        log_error("accept fail. ret=%d\n", fd);
+        log_error("accept fail. ret=%d", fd);
         assert(0);
     } while (1);
 
@@ -129,6 +149,11 @@ static int s3_listen_init(S3Listen *l, S3IO *s3io) {
     l->lwatcher.data = s3io;
     ev_io_init(&l->lwatcher, s3_accept_socket_cb, l->listenfd, EV_READ);
     ev_io_start(l->listen_loop, &l->lwatcher);
+}
+
+void s3_io_listen_destroy(S3Listen *l) {
+    ev_io_stop(l->listen_loop, &l->lwatcher);
+    close(l->listenfd);
 }
 
 static void *s3_listen_thread_start_rontine(void *arg) {

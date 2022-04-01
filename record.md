@@ -47,3 +47,12 @@ struct ev_loop *loop = ev_default_loop(0);
 protoc --c_out=. s3_packet_header.proto
 ```
 同一结构体的protobuf编码长度不固定，不适合做网络packet协议，适合做RPC协议
+
+## gdb
+输出core文件需执行./autobuild.sh unittest编译
+查看core file size: ulimit -c
+修改core file size: ulimit -c unlimited
+
+## 第三方库
+third/ctest drdr.xp
+third/logc https://github.com/rxi/log.c
