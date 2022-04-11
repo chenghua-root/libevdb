@@ -55,4 +55,27 @@ protoc --c_out=. s3_packet_header.proto
 
 ## 第三方库
 third/ctest drdr.xp
-third/logc https://github.com/rxi/log.c
+third/logc  https://github.com/rxi/log.c
+
+### third/logc调整
+日志格式把path调整为了file
+添加了线程id
+
+## include
+    1      User Commands
+    2      System Calls
+    3      C Library Functions
+    4      Devices and Special Files
+    5      File Formats and Conventions
+    6      Games et. al.
+    7      Miscellanea
+    8      System Administration tools and Daemons
+NULL         #include <stdint.h>
+malloc()     #include <stdlib.h>
+bzero()      #include <strings.h>
+assert()     #include <assert.h>
+
+## c语法
+本地线程静态变量，如: static __thread int64_t tid = -1;
+void __attribute__((constructor(priority))) func(); 在main之前调用，可设置priority，priority越小越先执行
+void __attribute__((destructor(priority))) func(); 在main()函数退出或者调用了exit()之后调用，可设置priority，priority越小越后执行

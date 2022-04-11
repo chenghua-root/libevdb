@@ -5,6 +5,9 @@ aux_source_directory(. DIR_LIB_SRCS)
 # 生成链接库
 add_library(lib STATIC ${DIR_LIB_SRCS})
 
+target_link_libraries(lib PUBLIC
+    logc
+)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 target_link_libraries(lib PUBLIC Threads::Threads)

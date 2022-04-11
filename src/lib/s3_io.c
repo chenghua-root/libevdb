@@ -2,10 +2,11 @@
 
 #include <assert.h>
 #include <stdlib.h>
-#include <unistd.h> // pipe()
-#include "lib/s3_connection.h"
+#include <unistd.h>
 #include "lib/s3_pthread.h"
 #include "lib/s3_socket.h"
+#include "lib/s3_packet.h"
+#include "lib/s3_connection.h"
 #include "third/logc/log.h"
 
 /**********************************s3 io***********************************/
@@ -48,10 +49,12 @@ static void s3_pipe_recv_socket_cb(struct ev_loop *loop, ev_io *w, int revents) 
 
     S3Connection *conn = s3_connection_construct();
     s3_connection_init(conn, ioth->loop, socket_fd);
-    s3_list_add(&ioth->conn_list, &conn->list_node);
+    conn->handler = ioth->handler;
+    s3_list_add_tail(&conn->conn_list_node, &ioth->conn_list);
     ioth->conn_cnt++;
 
-    ev_io_init(&conn->read_watcher, s3_connection_recv_socket_cb, socket_fd, EV_READ);
+    //ev_io_init(&conn->read_watcher, s3_connection_recv_socket_cb, socket_fd, EV_READ);
+    ev_io_init(&conn->read_watcher, s3_connection_recv_socket_cb_v2, socket_fd, EV_READ);
     ev_io_init(&conn->write_watcher, s3_connection_write_socket_cb, socket_fd, EV_WRITE);
 
     ev_io_start(loop, &conn->read_watcher);
@@ -76,7 +79,7 @@ static int s3_io_thread_init(S3IOThread *ioth, int id) {
 
 void s3_io_thread_destroy(S3IOThread *ioth) {
     S3Connection *conn = NULL;
-    s3_list_for_each_entry(conn, &ioth->conn_list, list_node) {
+    s3_list_for_each_entry(conn, &ioth->conn_list, conn_list_node) {
         s3_connection_destruct(conn);
     }
 
@@ -96,21 +99,22 @@ static void *s3_io_thread_start_rontine(void *arg) {
     return NULL;
 }
 
-S3IO *s3_io_create() {
+S3IO *s3_io_create(int io_thread_cnt, S3IOHandler *handler) {
     int ret = 0;
     S3IO *s3io = NULL;
 
     s3io = s3_io_construct();
     assert(s3io != NULL);
-    ret = s3_io_init(s3io, 2); // io thread cnt
+    ret = s3_io_init(s3io, io_thread_cnt);
     assert(ret == 0);
 
     for (int i = 0; i < s3io->io_thread_cnt; ++i) {
         S3IOThread *ioth = &s3io->ioths[i];
+        ioth->handler = handler;
         s3_io_thread_init(ioth, i);
         s3_pthread_create_joinable(&ioth->tid, s3_io_thread_start_rontine, (void*)ioth);
     }
-    usleep(200);
+    usleep(100);
 
     return s3io;
 }
@@ -131,7 +135,7 @@ static void s3_accept_socket_cb(struct ev_loop *loop, ev_io *w, int revents) {
             continue;
         }
         log_error("accept fail. ret=%d", fd);
-        assert(0);
+        assert(false);
     } while (1);
 
     S3IO *s3io = (S3IO*)w->data;
@@ -165,7 +169,7 @@ static void *s3_listen_thread_start_rontine(void *arg) {
 }
 
 void s3_io_start_run(S3IO *s3io) {
-   s3_listen_init(&s3io->listen, s3io);
+    s3_listen_init(&s3io->listen, s3io);
 
     pthread_t tid;
     s3_pthread_create_joinable(&tid, s3_listen_thread_start_rontine, (void*)&s3io->listen);

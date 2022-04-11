@@ -22,6 +22,10 @@
 
 #include "log.h"
 
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/syscall.h>
+
 #define MAX_CALLBACKS 32
 
 typedef struct {
@@ -55,13 +59,13 @@ static void stdout_callback(log_Event *ev) {
   buf[strftime(buf, sizeof(buf), "%H:%M:%S", ev->time)] = '\0';
 #ifdef LOG_USE_COLOR
   fprintf(
-    ev->udata, "%s %s%-5s\x1b[0m \x1b[90m%s:%d:\x1b[0m ",
+    ev->udata, "%s %s%-5s\x1b[0m %d\x1b[0m \x1b[90m%s:%d:\x1b[0m ",
     buf, level_colors[ev->level], level_strings[ev->level],
-    ev->file, ev->line);
+    ev->tid, ev->file, ev->line);
 #else
   fprintf(
-    ev->udata, "%s %-5s %s:%d: ",
-    buf, level_strings[ev->level], ev->file, ev->line);
+    ev->udata, "%s %-5s %d %s:%d: ",
+    buf, level_strings[ev->level], ev->tid, ev->file, ev->line);
 #endif
   vfprintf(ev->udata, ev->fmt, ev->ap);
   fprintf(ev->udata, "\n");
@@ -73,8 +77,8 @@ static void file_callback(log_Event *ev) {
   char buf[64];
   buf[strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", ev->time)] = '\0';
   fprintf(
-    ev->udata, "%s %-5s %s:%d: ",
-    buf, level_strings[ev->level], ev->file, ev->line);
+    ev->udata, "%s %-5s %d %s:%d: ",
+    buf, level_strings[ev->level], ev->tid, ev->file, ev->line);
   vfprintf(ev->udata, ev->fmt, ev->ap);
   fprintf(ev->udata, "\n");
   fflush(ev->udata);
@@ -137,12 +141,23 @@ static void init_event(log_Event *ev, void *udata) {
 }
 
 
+static __inline__ int64_t s3_get_tid() {
+  static __thread int64_t tid = -1; // 线程级别的静态变量
+  if (tid != -1) {
+      return tid;
+  }
+  tid = (int64_t)(syscall(__NR_gettid));
+  return tid;
+}
+
+
 void log_log(int level, const char *file, int line, const char *fmt, ...) {
   log_Event ev = {
     .fmt   = fmt,
     .file  = file,
     .line  = line,
     .level = level,
+    .tid   = s3_get_tid(),
   };
 
   lock();

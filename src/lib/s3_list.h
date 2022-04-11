@@ -1,10 +1,6 @@
 #ifndef S3_LIB_LIST_H_
 #define S3_LIB_LIST_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 # include <stdlib.h>
 
 /*
@@ -426,8 +422,4 @@ static inline int64_t s3_list_length(const S3ListHead *list) {
             &pos->member != (head);                                         \
             pos = n, n = s3_list_entry(n->member.prev, typeof(*n), member))
 
-#ifdef __cplusplus
-}
 #endif
-#endif /* S3_LIB_LIST_H_ */
-// vim:ts=2:sw=2:et

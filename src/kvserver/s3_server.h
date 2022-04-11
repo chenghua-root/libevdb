@@ -1,5 +1,6 @@
-#include "lib/s3_io.h"
 #include "third/logc/log.h"
+#include "lib/s3_io.h"
+#include "lib/s3_io_handler.h"
 
 typedef struct S3Global S3Global;
 struct S3Global {

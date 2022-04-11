@@ -1,12 +1,12 @@
 #include "s3_server.h"
 
-#include <assert.h>
 #include <errno.h>
 #include <ev.h>
 #include <pthread.h>
 #include <signal.h>
 #include <sys/sysinfo.h>
-#include "s3_net_callback.h"
+#include "lib/s3_error.h"
+#include "s3_handle_request.h"
 
 S3Global s3_g = s3_global_null;
 
@@ -15,15 +15,16 @@ static FILE *g_log_fp = NULL;
 static pthread_mutex_t MUTEX_LOG;
 static void s3_log_lock(bool lock, void *udata) {
     pthread_mutex_t *LOCK = (pthread_mutex_t*)(udata);
-    if (lock)
+    if (lock) {
         pthread_mutex_lock(LOCK);
-    else
+    } else {
         pthread_mutex_unlock(LOCK);
+    }
 }
 
 int s3_init_log() {
     log_set_level(0);
-    log_set_quiet(false); // false: 不同步输出到屏幕
+    log_set_quiet(false); // false: 同步输出到屏幕; true: 只输出到文件
 
     pthread_mutex_init(&MUTEX_LOG, NULL);
     log_set_lock(s3_log_lock, &MUTEX_LOG);
@@ -31,13 +32,18 @@ int s3_init_log() {
     FILE *g_log_fp;
     g_log_fp = fopen("./libkv.log", "ab");
     if(g_log_fp == NULL) {
-        return -1;
+        return S3_FAIL;
     }
     log_add_fp(g_log_fp, 0);
 
-    log_info("init log succ...");
+    log_trace("init log succ...");
+    log_debug("init log succ...");
+    log_info ("init log succ...");
+    log_warn ("init log succ...");
+    log_error("init log succ...");
+    log_fatal("init log succ...");
 
-    return 0;
+    return S3_OK;
 }
 
 static void s3_destroy_log() {
@@ -50,10 +56,10 @@ static void s3_destroy_log() {
 
 /*****************************s3_init_net***************************/
 int s3_init_net() {
-    s3_g.s3io = s3_io_create();
-
     S3IOHandler *io_handler = &s3_g.io_handler;
-    io_handler->decode = s3_net_decode;
+    io_handler->process = s3_handle_process_request;
+
+    s3_g.s3io = s3_io_create(2, io_handler);
 
     log_info("init net succ...");
 
@@ -105,7 +111,8 @@ int s3_regist_signal() {
         typeof(s3_signal_table[0]) *sh = & s3_signal_table[i];
         if (SIG_ERR == signal(sh->sig, sh->handler)) {
             log_error("regist signal fail. signal num = %d, errno = %s", sh->sig, strerror(errno));
-            assert(false);
+            return S3_FAIL;
         }
     }
+    return S3_OK;
 }

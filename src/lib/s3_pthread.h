@@ -1,5 +1,5 @@
-#ifndef S3_LIB_PTHREAD_
-#define S3_LIB_PTHREAD_
+#ifndef S3_LIB_PTHREAD_H_
+#define S3_LIB_PTHREAD_H_
 
 #include <errno.h>
 #include <string.h>

@@ -13,6 +13,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <time.h>
+#include <stdint.h>
 
 #define LOG_VERSION "0.1.0"
 
@@ -24,6 +25,7 @@ typedef struct {
   void *udata;
   int line;
   int level;
+  int64_t tid;
 } log_Event;
 
 typedef void (*log_LogFn)(log_Event *ev);

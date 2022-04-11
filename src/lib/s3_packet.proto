@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+message S3AddReq {
+    int64 A = 1;
+    int64 B = 2;
+}
+
+message S3AddResp {
+    int64 ret = 1;
+}
+
+message S3SubReq {
+    int64 A = 1;
+    int64 B = 2;
+}
+
+message S3SubResp {
+    int64 ret = 1;
+}
+
+message S3MulReq {
+    int64 A = 1;
+    int64 B = 2;
+}
+
+message S3MulResp {
+    int64 ret = 1;
+}
+
+message S3DivReq {
+    int64 Divisor = 1;
+    int64 Dividend = 2;
+}
+
+message S3DivResp {
+    int64 ret = 1;
+}
