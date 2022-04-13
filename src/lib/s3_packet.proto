@@ -6,7 +6,8 @@ message S3AddReq {
 }
 
 message S3AddResp {
-    int64 ret = 1;
+    int32 result = 1;
+    int64 val = 2;
 }
 
 message S3SubReq {
@@ -15,7 +16,8 @@ message S3SubReq {
 }
 
 message S3SubResp {
-    int64 ret = 1;
+    int32 result = 1;
+    int64 val = 2;
 }
 
 message S3MulReq {
@@ -24,7 +26,8 @@ message S3MulReq {
 }
 
 message S3MulResp {
-    int64 ret = 1;
+    int32 result = 1;
+    int64 val = 2;
 }
 
 message S3DivReq {
@@ -33,5 +36,6 @@ message S3DivReq {
 }
 
 message S3DivResp {
-    int64 ret = 1;
+    int32 result = 1;
+    int64 val = 2;
 }

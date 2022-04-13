@@ -68,8 +68,8 @@ S3Message *s3_message_create_with_old(S3Message *old_msg) {
     assert(m != NULL);
     s3_message_init(m);
 
-    memcpy(m->in_buf->data, old_msg->in_buf->left, s3_buf_unconsumed_size(m->in_buf));
-    m->in_buf->right += s3_buf_unconsumed_size(m->in_buf);
+    memcpy(m->in_buf->data, old_msg->in_buf->left, s3_buf_unconsumed_size(old_msg->in_buf));
+    m->in_buf->right += s3_buf_unconsumed_size(old_msg->in_buf);
     old_msg->in_buf->right = old_msg->in_buf->left;
 
     return m;

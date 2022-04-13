@@ -7,10 +7,6 @@
 #include <assert.h>
 #include <signal.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define S3_MAX_LOCAL_FILE_NAME_LENGTH 16384
 #define S3_LITERAL_NULL "(NULL)"
 
@@ -34,9 +30,11 @@ extern "C" {
 #define s3_memcmp(a, b, size)  memcmp((a), (b), (size))
 #define s3_strncmp(a, b, size) memcmp((a), (b), (size))
 
+/*
 typedef uint8_t bool;
 #define true ((uint8_t)1)
 #define false ((uint8_t)0)
+*/
 
 /* S3 data type names */
 typedef void *S3Ptr;
@@ -124,14 +122,14 @@ typedef struct {
 
 #define s3_must_be(expr, ...) do {                                            \
     if (! s3_likely(expr)) {                                                  \
-      S3_WARN("assertion fail: "#expr);                                      \
+      log_warn("assertion fail: "#expr);                                      \
       return (void)0, ##__VA_ARGS__;                                          \
     }                                                                         \
   } while (0)
 
-#define s3_check_be(expr, ...) do {                                            \
+#define s3_check_be(expr, ...) do {                                           \
     if (! s3_likely(expr)) {                                                  \
-      S3_DEBUG("assertion fail: "#expr);                                      \
+      log_debug("assertion fail: "#expr);                                     \
       return (void)0, ##__VA_ARGS__;                                          \
     }                                                                         \
   } while (0)
@@ -225,8 +223,4 @@ typedef struct {
      } while(0)
 
 #define s3_bug(...) raise(11)
-#ifdef __cplusplus
-}
 #endif
-#endif /* S3_LIB_DEFINE_ */
-// vim:ts=8:sw=2:et

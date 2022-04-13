@@ -20,23 +20,26 @@ enum S3MsgReadStatus {
 #define S3_MSG_BUF_LEN     (8*1024*1024)
 #define S3_MSG_BUF_MIN_LEN 1024
 
-typedef struct S3Message        S3Message;
+typedef struct S3Message S3Message;
 struct S3Message {
-  S3Buf                         *in_buf;
+  S3Buf                  *in_buf;
 
-  S3MsgReadStatus               read_status;
-  uint64_t                      next_read_len;
-  S3ListHead                    message_list_node;
+  S3MsgReadStatus        read_status;
+  uint64_t               next_read_len;
+  S3ListHead             message_list_node;
 
-  S3List                        request_list;
-  uint32_t                      request_cnt;
-  uint32_t                      request_done_cnt;
+  S3List                 request_list;
+  uint32_t               request_cnt;
+  uint32_t               request_done_cnt;
+
+  void                   *conn;
 
 };
 
 #define s3_message_null {                   \
     .in_buf = NULL,                         \
     .read_status = S3_MSG_READ_STATUS_INIT, \
+    .conn = NULL,                           \
 }
 
 S3Message *s3_message_construct();

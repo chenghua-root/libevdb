@@ -15,7 +15,6 @@
 #include "lib/s3_packet.h"
 #include "lib/s3_packet.pb-c.h"
 #include "lib/s3_rpc.h"
-#include "lib/s3_packet_header.pb-c.h"
 
 #define err_message(msg) \
     do {perror(msg); exit(EXIT_FAILURE);} while(0)
@@ -37,42 +36,7 @@ static int create_clientfd(char const *addr, uint16_t u16port)
     return fd;
 }
 
-static void *routine(void *args)
-{
-    int fd;
-    char buf[256];
-    int ret;
-
-    fd = create_clientfd("127.0.0.1", 9000);
-
-    int i = 0;
-    for (; ; ++i) {
-        S3PacketHeader header = S3_PACKET_HEADER__INIT;
-        header.pcode = 1;
-        header.session_id = i;
-        header.data_len = 0;
-
-        size_t header_len = s3_packet_header__get_packed_size(&header);
-        size_t pack_len = s3_packet_header__pack(&header, buf); // 打包
-        if (header_len != pack_len) {
-            printf("---------------------header_len=%d, pack_len=%d\n", header_len, pack_len);
-            exit(1);
-        }
-
-        ret = write(fd, buf, pack_len);
-        if (ret <= 0) {
-            perror("write error\n");
-        }
-        printf("write ret=%d\n", ret);
-
-        memset(buf, '\0', sizeof(buf));
-        ret = read(fd, buf, sizeof(buf));
-        fprintf(stdout, "pthreadid:%ld, len=%d, %s\n", pthread_self(), ret, buf);
-        sleep(5);
-    }
-}
-
-static void *routineV2(void *args) {
+static void *routine(void *args) {
     int fd;
     char buf[256];
     int ret;
@@ -89,17 +53,18 @@ static void *routineV2(void *args) {
         assert(data_len == pack_len);
         uint64_t data_crc = s3_crc64(buf, pack_len);
 
-        S3PacketHeaderV2 header = s3_packet_header_v2_null;
+        S3PacketHeader header = s3_packet_header_null;
         header.pcode = S3_PACKET_CODE_ADD;
         header.session_id = i;
         header.data_len = pack_len;
-        uint64_t header_crc = s3_crc64(&header, sizeof(S3PacketHeaderV2));
+        uint64_t header_crc = s3_crc64(&header, sizeof(S3PacketHeader));
         header.header_crc = header_crc;
 
-        ret = write(fd, &header, sizeof(S3PacketHeaderV2));
+        ret = write(fd, &header, sizeof(S3PacketHeader));
         if (ret <= 0) {
             perror("write header error\n");
         }
+        printf("write head size=%d\n", ret);
         sleep(1);
 
         ret = write(fd, buf, 1);
@@ -108,6 +73,7 @@ static void *routineV2(void *args) {
         if (ret <= 0) {
             perror("write data error\n");
         }
+        printf("write body size=%d\n", ret+1);
 
         ret = write(fd, &data_crc, sizeof(data_crc));
         if (ret <= 0) {
@@ -125,8 +91,7 @@ int main(void)
     pthread_t pids[2];
 
     for (int i = 0; i < sizeof(pids)/sizeof(pthread_t); ++i) {
-        //pthread_create(pids + i, NULL, routine, 0);
-        pthread_create(pids + i, NULL, routineV2, 0);
+        pthread_create(pids + i, NULL, routine, 0);
     }
 
     for (int i = 0; i < sizeof(pids)/sizeof(pthread_t); ++i) {

@@ -6,9 +6,10 @@
 #include <signal.h>
 #include <sys/sysinfo.h>
 #include "lib/s3_error.h"
+#include "lib/s3_malloc.h"
+#include "lib/s3_threads_queue.h"
 #include "s3_handle_request.h"
-
-S3Global s3_g = s3_global_null;
+#include "s3_global.h"
 
 /*****************************s3_init_log***************************/
 static FILE *g_log_fp = NULL;
@@ -57,7 +58,7 @@ static void s3_destroy_log() {
 /*****************************s3_init_net***************************/
 int s3_init_net() {
     S3IOHandler *io_handler = &s3_g.io_handler;
-    io_handler->process = s3_handle_process_request;
+    io_handler->process = s3_handle_request;
 
     s3_g.s3io = s3_io_create(2, io_handler);
 
@@ -72,6 +73,15 @@ int s3_start_net() {
 
 static void s3_destroy_net() {
     s3_io_destroy(s3_g.s3io);
+}
+
+/*****************************s3_init_worker***************************/
+int s3_start_worker_threads() {
+    int ret = S3_OK;
+    s3_g.cmpt_workers = s3_threads_queue_construct();
+    ret = s3_threads_queue_init(s3_g.cmpt_workers, NULL, 4, S3_THREADS_QUEUE_WAKEUP_RR);
+    assert(ret == S3_OK);
+    return ret;
 }
 
 /****************************s3_global_destroy**************************/
@@ -95,6 +105,7 @@ static void s3_signal_handler_interrupt(int sig) {
 static void s3_signal_handler_print_stat(int sig) {
     log_info("receive self define(print stat) signal, signal num=%d", sig);
     log_info("total connection count=%ld", s3_g.s3io->conn_cnt);
+    s3_print_mem_usage();
 }
 
 struct {

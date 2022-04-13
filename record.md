@@ -44,7 +44,7 @@ struct ev_loop *loop = ev_default_loop(0);
 
 ## protobuf-c
 ```
-protoc --c_out=. s3_packet_header.proto
+protoc --c_out=. s3_packet.proto
 ```
 同一结构体的protobuf编码长度不固定，不适合做网络packet协议，适合做RPC协议
 
@@ -79,3 +79,6 @@ assert()     #include <assert.h>
 本地线程静态变量，如: static __thread int64_t tid = -1;
 void __attribute__((constructor(priority))) func(); 在main之前调用，可设置priority，priority越小越先执行
 void __attribute__((destructor(priority))) func(); 在main()函数退出或者调用了exit()之后调用，可设置priority，priority越小越后执行
+
+## 信号
+输出内存分配统计：kill -41 `ps -ef | grep bin/libevkv | grep -v grep | awk '{print $2}'`

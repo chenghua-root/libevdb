@@ -3,6 +3,6 @@
 
 #include "lib/s3_request.h"
 
-int s3_handle_process_request(S3Request *r);
+int s3_handle_request(S3Request *r);
 
 #endif

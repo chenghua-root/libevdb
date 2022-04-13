@@ -14,8 +14,8 @@ void *s3_net_decode(S3Message *m) {
 
     S3Packet *p = s3_packet_construct();
     assert(p != NULL);
-    S3PacketHeaderV2 *header = &p->header;
-    *header = *(S3PacketHeaderV2*)(in_buf->left);
+    S3PacketHeader *header = &p->header;
+    *header = *(S3PacketHeader*)(in_buf->left);
     in_buf->left += S3_PACKET_HEADER_LEN;
 
     uint64_t header_crc = header->header_crc;

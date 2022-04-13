@@ -7,7 +7,10 @@
 #include "lib/s3_socket.h"
 #include "lib/s3_packet.h"
 #include "lib/s3_connection.h"
+#include "lib/s3_message.h"
 #include "third/logc/log.h"
+
+#define S3_IOTH_WITH_REQUEST(r) ((S3IOThread*)((S3Connection*)((S3Message*)r->message)->conn)->ioth)
 
 /**********************************s3 io***********************************/
 S3IO *s3_io_construct() {
@@ -50,19 +53,34 @@ static void s3_pipe_recv_socket_cb(struct ev_loop *loop, ev_io *w, int revents) 
     S3Connection *conn = s3_connection_construct();
     s3_connection_init(conn, ioth->loop, socket_fd);
     conn->handler = ioth->handler;
+    conn->ioth = ioth;
     s3_list_add_tail(&conn->conn_list_node, &ioth->conn_list);
     ioth->conn_cnt++;
 
-    //ev_io_init(&conn->read_watcher, s3_connection_recv_socket_cb, socket_fd, EV_READ);
     ev_io_init(&conn->read_watcher, s3_connection_recv_socket_cb_v2, socket_fd, EV_READ);
     ev_io_init(&conn->write_watcher, s3_connection_write_socket_cb, socket_fd, EV_WRITE);
 
     ev_io_start(loop, &conn->read_watcher);
 }
 
-static int s3_io_thread_init(S3IOThread *ioth, int id) {
+static void s3_io_thread_wakeup_cb(struct ev_loop *loop, ev_io *w, int revents) {
+    S3IOThread *ioth = (S3IOThread*)w->data;
+    S3ListHead request_list;
+
+    pthread_spin_lock(&ioth->pthread_lock);
+    s3_list_movelist(&ioth->request_list, &request_list);
+    pthread_spin_unlock(&ioth->pthread_lock);
+
+    s3_connnection_send_resp(&request_list);
+    // TODO 剩下的request_list放回ioth->request_list
+}
+
+static int s3_io_thread_init(S3IOThread *ioth, int id, S3IOHandler *handler) {
     ioth->id = id;
+    ioth->handler = handler;
+    pthread_spin_init(&ioth->pthread_lock, PTHREAD_PROCESS_PRIVATE);
     s3_list_init(&ioth->conn_list);
+    s3_list_init(&ioth->request_list);
 
     int ret = pipe(ioth->pipefd);
     assert(ret == 0);
@@ -73,6 +91,9 @@ static int s3_io_thread_init(S3IOThread *ioth, int id) {
     ioth->pipe_read_watcher.data = ioth;
     ev_io_init(&ioth->pipe_read_watcher, s3_pipe_recv_socket_cb, ioth->pipefd[0], EV_READ);
     ev_io_start(ioth->loop, &ioth->pipe_read_watcher);
+
+    ioth->thread_watcher.data = ioth;
+    ev_async_init(&ioth->thread_watcher, s3_io_thread_wakeup_cb);
 
     return 0;
 }
@@ -110,13 +131,22 @@ S3IO *s3_io_create(int io_thread_cnt, S3IOHandler *handler) {
 
     for (int i = 0; i < s3io->io_thread_cnt; ++i) {
         S3IOThread *ioth = &s3io->ioths[i];
-        ioth->handler = handler;
-        s3_io_thread_init(ioth, i);
+        s3_io_thread_init(ioth, i, handler);
         s3_pthread_create_joinable(&ioth->tid, s3_io_thread_start_rontine, (void*)ioth);
     }
     usleep(100);
 
     return s3io;
+}
+
+void s3_io_thread_add_resp_request(S3Request *r) {
+    S3IOThread *ioth = S3_IOTH_WITH_REQUEST(r);
+
+    pthread_spin_lock(&ioth->pthread_lock);
+    s3_list_add_tail(&r->request_list_node, &ioth->request_list);
+    pthread_spin_unlock(&ioth->pthread_lock);
+
+    ev_async_send(ioth->loop, &ioth->thread_watcher);
 }
 
 /*********************************listen**********************************/

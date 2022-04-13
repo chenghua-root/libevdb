@@ -12,6 +12,8 @@
   _render(S3_ERR_INVALID_RPC)                                                 \
   _render(S3_ERR_NOT_FOUND)                                                   \
   _render(S3_ERR_NET_AGAIN)                                                   \
+  _render(S3_ERR_INIT_TWICE)                                                  \
+  _render(S3_ERR_OUT_OF_MEM)                                                  \
   _render(S3_ERR_TIMEOUT)
 
 #define S3_FAIL S3_ERR_ERR

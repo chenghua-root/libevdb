@@ -44,11 +44,12 @@ struct  S3AddReq
 struct  S3AddResp
 {
   ProtobufCMessage base;
-  int64_t ret;
+  int32_t result;
+  int64_t val;
 };
 #define S3_ADD_RESP__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&s3_add_resp__descriptor) \
-    , 0 }
+    , 0, 0 }
 
 
 struct  S3SubReq
@@ -65,11 +66,12 @@ struct  S3SubReq
 struct  S3SubResp
 {
   ProtobufCMessage base;
-  int64_t ret;
+  int32_t result;
+  int64_t val;
 };
 #define S3_SUB_RESP__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&s3_sub_resp__descriptor) \
-    , 0 }
+    , 0, 0 }
 
 
 struct  S3MulReq
@@ -86,11 +88,12 @@ struct  S3MulReq
 struct  S3MulResp
 {
   ProtobufCMessage base;
-  int64_t ret;
+  int32_t result;
+  int64_t val;
 };
 #define S3_MUL_RESP__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&s3_mul_resp__descriptor) \
-    , 0 }
+    , 0, 0 }
 
 
 struct  S3DivReq
@@ -107,11 +110,12 @@ struct  S3DivReq
 struct  S3DivResp
 {
   ProtobufCMessage base;
-  int64_t ret;
+  int32_t result;
+  int64_t val;
 };
 #define S3_DIV_RESP__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&s3_div_resp__descriptor) \
-    , 0 }
+    , 0, 0 }
 
 
 /* S3AddReq methods */

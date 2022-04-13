@@ -6,10 +6,12 @@
 
 typedef struct S3Request S3Request;
 struct S3Request {
-    S3Packet *in_packet;
-    S3Packet *out_packet;
+    S3Packet   *in_packet;
+    S3Packet   *out_packet;
+    S3List     *out_buf_list;
 
     S3ListHead request_list_node;
+    void       *message;
 
     // TODO: recv_time;
 };
@@ -17,6 +19,7 @@ struct S3Request {
     .in_packet = NULL,    \
     .out_packet = NULL,   \
     .request_list_node = s3_list_head_null, \
+    .message = NULL,      \
 }
 
 S3Request *s3_request_construct();

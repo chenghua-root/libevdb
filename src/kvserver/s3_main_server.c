@@ -1,6 +1,7 @@
 #include <unistd.h>
-#include "lib/s3_connection_bak.h"
 #include "lib/s3_error.h"
+#include "lib/s3_malloc.h"
+#include "s3_global.h"
 #include "s3_server.h"
 
 int main(int argc, char *argv[]) {
@@ -10,14 +11,14 @@ int main(int argc, char *argv[]) {
         printf("init log fail"); exit(1);
     }
 
-    //log_info("start run ev loop...");
-    //struct ev_loop *loop = EV_DEFAULT;
-    //s3_connection_bak_create_listen_and_io_loop(loop);
-    //s3_connection_bak_loop_run(loop);
-
     ret = s3_init_net();
     if (ret != S3_OK) {
         log_fatal("init net fail"); exit(1);
+    }
+
+    ret = s3_start_worker_threads();
+    if (ret != S3_OK) {
+        log_fatal("init work threads fail"); exit(1);
     }
 
     ret = s3_start_net();
@@ -29,6 +30,8 @@ int main(int argc, char *argv[]) {
     if (ret != S3_OK) {
         log_fatal("regist signal fail"); exit(1);
     }
+
+    s3_print_mem_usage();
 
     while(s3_g.stop_flag == 0) {
         sleep(1);

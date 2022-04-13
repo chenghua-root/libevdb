@@ -8,8 +8,10 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
+#include "lib/s3_list.h"
 
 int s3_socket_create_listenfd();
 int s3_socket_read(int fd, char *buf, int size);
+int s3_socket_write(int fd, S3List *buf_list);
 
 #endif

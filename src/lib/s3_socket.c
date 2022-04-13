@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <strings.h>
 #include <stdio.h>
+#include "lib/s3_buf.h"
 #include "lib/s3_error.h"
 
 int s3_socket_create_listenfd() {
@@ -48,4 +49,13 @@ int s3_socket_read(int fd, char *buf, int size) {
   }
 
   return n;
+}
+
+int s3_socket_write(int fd, S3List *buf_list) {
+    int ret = S3_OK;
+    S3Buf *buf;
+    s3_list_for_each_entry(buf, buf_list, node) {
+        ret = send(fd, buf->left, s3_buf_unconsumed_size(buf), 0);
+    }
+    return ret;
 }

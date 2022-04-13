@@ -21,13 +21,18 @@ void s3_io_listen_destroy();
 typedef struct S3IOThread S3IOThread;
 struct S3IOThread {
     pthread_t             tid;
+
     int                   id;
+    S3IOHandler           *handler;
+    pthread_spinlock_t    pthread_lock;
     S3List                conn_list;
+    uint64_t              conn_cnt;
+    S3List                request_list;
+
     struct ev_loop        *loop;
     int                   pipefd[2];
     ev_io                 pipe_read_watcher; // listen线程把新连接fd通过pipe发送到此watcher
-    uint64_t              conn_cnt;
-    S3IOHandler           *handler;
+    ev_async              thread_watcher;
 };
 void s3_io_thread_destroy();
 
@@ -53,5 +58,6 @@ void s3_io_destroy(S3IO *s3io);
 S3IO *s3_io_create(int io_thread_cnt, S3IOHandler *handler);
 void s3_io_start_run(S3IO *s3io);
 
+void s3_io_thread_add_resp_request(S3Request *r);
 
 #endif

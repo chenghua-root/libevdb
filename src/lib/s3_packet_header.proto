@@ -1,7 +1,0 @@
-syntax = "proto3";
-
-message S3PacketHeader {
-    int32 pcode = 1;
-    uint64 session_id = 2;
-    int64 data_len = 3;
-}

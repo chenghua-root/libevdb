@@ -418,15 +418,27 @@ const ProtobufCMessageDescriptor s3_add_req__descriptor =
   (ProtobufCMessageInit) s3_add_req__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor s3_add_resp__field_descriptors[1] =
+static const ProtobufCFieldDescriptor s3_add_resp__field_descriptors[2] =
 {
   {
-    "ret",
+    "result",
     1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(S3AddResp, result),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "val",
+    2,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_INT64,
     0,   /* quantifier_offset */
-    offsetof(S3AddResp, ret),
+    offsetof(S3AddResp, val),
     NULL,
     NULL,
     0,             /* flags */
@@ -434,12 +446,13 @@ static const ProtobufCFieldDescriptor s3_add_resp__field_descriptors[1] =
   },
 };
 static const unsigned s3_add_resp__field_indices_by_name[] = {
-  0,   /* field[0] = ret */
+  0,   /* field[0] = result */
+  1,   /* field[1] = val */
 };
 static const ProtobufCIntRange s3_add_resp__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 1 }
+  { 0, 2 }
 };
 const ProtobufCMessageDescriptor s3_add_resp__descriptor =
 {
@@ -449,7 +462,7 @@ const ProtobufCMessageDescriptor s3_add_resp__descriptor =
   "S3AddResp",
   "",
   sizeof(S3AddResp),
-  1,
+  2,
   s3_add_resp__field_descriptors,
   s3_add_resp__field_indices_by_name,
   1,  s3_add_resp__number_ranges,
@@ -507,15 +520,27 @@ const ProtobufCMessageDescriptor s3_sub_req__descriptor =
   (ProtobufCMessageInit) s3_sub_req__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor s3_sub_resp__field_descriptors[1] =
+static const ProtobufCFieldDescriptor s3_sub_resp__field_descriptors[2] =
 {
   {
-    "ret",
+    "result",
     1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(S3SubResp, result),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "val",
+    2,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_INT64,
     0,   /* quantifier_offset */
-    offsetof(S3SubResp, ret),
+    offsetof(S3SubResp, val),
     NULL,
     NULL,
     0,             /* flags */
@@ -523,12 +548,13 @@ static const ProtobufCFieldDescriptor s3_sub_resp__field_descriptors[1] =
   },
 };
 static const unsigned s3_sub_resp__field_indices_by_name[] = {
-  0,   /* field[0] = ret */
+  0,   /* field[0] = result */
+  1,   /* field[1] = val */
 };
 static const ProtobufCIntRange s3_sub_resp__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 1 }
+  { 0, 2 }
 };
 const ProtobufCMessageDescriptor s3_sub_resp__descriptor =
 {
@@ -538,7 +564,7 @@ const ProtobufCMessageDescriptor s3_sub_resp__descriptor =
   "S3SubResp",
   "",
   sizeof(S3SubResp),
-  1,
+  2,
   s3_sub_resp__field_descriptors,
   s3_sub_resp__field_indices_by_name,
   1,  s3_sub_resp__number_ranges,
@@ -596,15 +622,27 @@ const ProtobufCMessageDescriptor s3_mul_req__descriptor =
   (ProtobufCMessageInit) s3_mul_req__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor s3_mul_resp__field_descriptors[1] =
+static const ProtobufCFieldDescriptor s3_mul_resp__field_descriptors[2] =
 {
   {
-    "ret",
+    "result",
     1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(S3MulResp, result),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "val",
+    2,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_INT64,
     0,   /* quantifier_offset */
-    offsetof(S3MulResp, ret),
+    offsetof(S3MulResp, val),
     NULL,
     NULL,
     0,             /* flags */
@@ -612,12 +650,13 @@ static const ProtobufCFieldDescriptor s3_mul_resp__field_descriptors[1] =
   },
 };
 static const unsigned s3_mul_resp__field_indices_by_name[] = {
-  0,   /* field[0] = ret */
+  0,   /* field[0] = result */
+  1,   /* field[1] = val */
 };
 static const ProtobufCIntRange s3_mul_resp__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 1 }
+  { 0, 2 }
 };
 const ProtobufCMessageDescriptor s3_mul_resp__descriptor =
 {
@@ -627,7 +666,7 @@ const ProtobufCMessageDescriptor s3_mul_resp__descriptor =
   "S3MulResp",
   "",
   sizeof(S3MulResp),
-  1,
+  2,
   s3_mul_resp__field_descriptors,
   s3_mul_resp__field_indices_by_name,
   1,  s3_mul_resp__number_ranges,
@@ -685,15 +724,27 @@ const ProtobufCMessageDescriptor s3_div_req__descriptor =
   (ProtobufCMessageInit) s3_div_req__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor s3_div_resp__field_descriptors[1] =
+static const ProtobufCFieldDescriptor s3_div_resp__field_descriptors[2] =
 {
   {
-    "ret",
+    "result",
     1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(S3DivResp, result),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "val",
+    2,
     PROTOBUF_C_LABEL_NONE,
     PROTOBUF_C_TYPE_INT64,
     0,   /* quantifier_offset */
-    offsetof(S3DivResp, ret),
+    offsetof(S3DivResp, val),
     NULL,
     NULL,
     0,             /* flags */
@@ -701,12 +752,13 @@ static const ProtobufCFieldDescriptor s3_div_resp__field_descriptors[1] =
   },
 };
 static const unsigned s3_div_resp__field_indices_by_name[] = {
-  0,   /* field[0] = ret */
+  0,   /* field[0] = result */
+  1,   /* field[1] = val */
 };
 static const ProtobufCIntRange s3_div_resp__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 1 }
+  { 0, 2 }
 };
 const ProtobufCMessageDescriptor s3_div_resp__descriptor =
 {
@@ -716,7 +768,7 @@ const ProtobufCMessageDescriptor s3_div_resp__descriptor =
   "S3DivResp",
   "",
   sizeof(S3DivResp),
-  1,
+  2,
   s3_div_resp__field_descriptors,
   s3_div_resp__field_indices_by_name,
   1,  s3_div_resp__number_ranges,

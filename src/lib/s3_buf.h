@@ -44,6 +44,8 @@ void s3_buf_destruct(S3Buf *b);
 int s3_buf_init(S3Buf *b, int64_t len);
 void s3_buf_destroy(S3Buf *b);
 
+int s3_buf_init_with_data(S3Buf *b, char *data, int64_t data_len);
+
 static inline int64_t s3_buf_consumed_size(const S3Buf *b) {
   return b->left - b->data;
 }

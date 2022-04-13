@@ -2,29 +2,40 @@
 
 #include "third/logc/log.h"
 #include "lib/s3_packet.h"
-#include "lib/s3_packet.pb-c.h"
 #include "lib/s3_error.h"
 #include "lib/s3_rpc.h"
+#include "lib/s3_threads_queue.h"
+#include "s3_global.h"
+#include "s3_handle_compute.h"
 
-static int s3_handle_compute_add(S3Request *r);
+static void s3_handle_do_request_cb(void *arg);
+static int s3_task_dispatch(uint16_t pcode, S3ThreadTask *task);
 
-int s3_handle_process_request(S3Request *r) {
-    int ret = S3_OK;
+/***************************run by io thread***********************************/
+int s3_handle_request(S3Request *r) {
     S3Packet *p = r->in_packet;
     int pcode = p->header.pcode;
 
+    S3ThreadTask task = {
+        .arg_ = r,
+        .work_func_ = s3_handle_do_request_cb,
+        .free_func_ = NULL,
+    };
+
+    int ret = s3_task_dispatch(pcode, &task);
+    assert(ret == S3_OK);
+
+    return ret;
+}
+
+static int s3_task_dispatch(uint16_t pcode, S3ThreadTask *task) {
+    int ret = S3_OK;
     switch (pcode) {
         case S3_PACKET_CODE_ADD:
-            ret = s3_handle_compute_add(r);
-            break;
         case S3_PACKET_CODE_SUB:
-            // TODO
-            break;
         case S3_PACKET_CODE_MUL:
-            // TODO
-            break;
         case S3_PACKET_CODE_DIV:
-            // TODO
+            ret = s3_threads_queue_push(s3_g.cmpt_workers, task);
             break;
         default:
             log_error("invalid pcode=%ld", pcode);
@@ -33,16 +44,25 @@ int s3_handle_process_request(S3Request *r) {
     return ret;
 }
 
-static int s3_handle_compute_add(S3Request *r) {
+/***************************run by worker thread*********************************/
+static void s3_handle_do_request_cb(void *arg) {
+    int ret = S3_OK;
+    S3Request *r = (S3Request *)arg;
     S3Packet *p = r->in_packet;
-    S3PacketHeaderV2 *header = &p->header;
+    int pcode = p->header.pcode;
 
-    S3AddReq *add_req = s3_add_req__unpack(NULL, header->data_len, p->data);
-    int sum = add_req->a + add_req->b;
-    log_info("-----------------------------------------------------\
-            do add, a=%ld, b=%ld, sum=%d", add_req->a, add_req->b, sum);
-    s3_add_req__free_unpacked(add_req, NULL);
-
-    return S3_OK;
+    switch (pcode) {
+        case S3_PACKET_CODE_ADD:
+            ret = s3_handle_compute_add(r);
+            break;
+        case S3_PACKET_CODE_SUB:
+            break;
+        case S3_PACKET_CODE_MUL:
+            break;
+        case S3_PACKET_CODE_DIV:
+            break;
+        default:
+            log_error("invalid pcode=%ld", pcode);
+    }
 }
 
