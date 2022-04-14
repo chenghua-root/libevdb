@@ -24,6 +24,7 @@ void s3_buf_destruct(S3Buf *b) {
 int s3_buf_init(S3Buf *b, int64_t len) {
     b->data = s3_malloc_(S3_MOD_BUF_DATA, len);
     assert(b->data != NULL);
+    b->data_owned = 1;
     b->left = b->right = b->data;
     b->len = len;
 
@@ -32,7 +33,9 @@ int s3_buf_init(S3Buf *b, int64_t len) {
 
 void s3_buf_destroy(S3Buf *b) {
     if (b != NULL) {
-        s3_free_(S3_MOD_BUF_DATA, b->data);
+        if (b->data_owned) {
+            s3_free_(S3_MOD_BUF_DATA, b->data);
+        }
         *b = (S3Buf)s3_buf_null;
     }
 }

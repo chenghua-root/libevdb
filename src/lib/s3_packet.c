@@ -56,8 +56,8 @@ int s3_packet_out_buf_list(S3Packet *p, S3List *out_list) {
 
     S3Buf *data_crc_buf = s3_buf_construct();
     s3_buf_init(data_crc_buf, sizeof(p->data_crc));
-    memcpy(head_buf->data, &p->header, sizeof(p->data_crc));
-    head_buf->right += sizeof(p->data_crc);
+    memcpy(data_crc_buf->data, &p->data_crc, sizeof(p->data_crc));
+    data_crc_buf->right += sizeof(p->data_crc);
 
     s3_list_add_tail(&head_buf->node, out_list);
     s3_list_add_tail(&data_buf->node, out_list);

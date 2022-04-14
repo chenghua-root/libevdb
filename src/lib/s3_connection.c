@@ -41,7 +41,9 @@ int s3_connection_init(S3Connection *conn, struct ev_loop *loop, int fd) {
     conn->loop          = loop;
     conn->fd            = fd;
     s3_list_head_init(&conn->conn_list_node);
+    s3_list_head_init(&conn->write_list_node);
     s3_list_init(&conn->message_list);
+    s3_list_init(&conn->output_buf_list);
     conn->read_watcher.data = conn;
     conn->write_watcher.data = conn;
     return S3_OK;
@@ -137,7 +139,7 @@ void s3_connection_recv_socket_cb_v2(struct ev_loop *loop, ev_io *w, int revents
         }
         assert(false);
     } else if (n == 0) {
-        close(w->fd);
+        s3_connection_destroy(c);
     }
     m->in_buf->right += n;
     log_info("recv data, len=%d", n);
@@ -176,7 +178,9 @@ void s3_connnection_send_resp(S3List *request_list) {
         ret = s3_packet_out_buf_list(r->out_packet, &out_list);
         s3_list_join(&out_list, &c->output_buf_list);
 
-        s3_list_add_tail(&c->write_list_node, &write_conn_list);
+        if (s3_list_empty(&c->write_list_node)) {
+            s3_list_add_tail(&c->write_list_node, &write_conn_list);
+        }
     }
 
     s3_list_for_each_entry_safe(c, dummy_conn, &write_conn_list, write_list_node) {
@@ -191,5 +195,6 @@ static int s3_connection_write_socket(S3Connection *c) {
     }
 
     s3_socket_write(c->fd, &c->output_buf_list);
+    s3_list_init(&c->output_buf_list);
     return S3_OK;
 }

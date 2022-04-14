@@ -19,10 +19,11 @@
 typedef struct S3Buf S3Buf;
 typedef void (*S3BufCleanupFunc)(S3Buf *, void *);
 struct S3Buf {
+    int64_t len;
+    int8_t data_owned;  // = 1 data是自己申请的，= 0 data是别人的
     char *data;
     char *left;
     char *right;
-    int64_t len;
 
     S3ListHead       node;
     S3BufCleanupFunc cleanup_func;
@@ -30,10 +31,11 @@ struct S3Buf {
 };
 
 #define s3_buf_null {          \
+    .len = 0,                  \
+    .data_owned = 0,           \
     .data = NULL,              \
     .left = NULL,              \
     .right = NULL,             \
-    .len = 0,                  \
     .node = s3_list_head_null, \
     .cleanup_func = NULL,      \
     .cleanup_args = NULL,      \

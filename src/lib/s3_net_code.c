@@ -22,6 +22,7 @@ void *s3_net_decode(S3Message *m) {
     header->header_crc = 0;
     uint64_t cmpt_header_crc = s3_crc64(header, S3_PACKET_HEADER_LEN);
     assert(header_crc == cmpt_header_crc);
+    header->header_crc = header_crc;
 
     if (s3_buf_unconsumed_size(in_buf) < header->data_len + sizeof(uint64_t)) {
         m->next_read_len = header->data_len + sizeof(uint64_t) - s3_buf_unconsumed_size(in_buf);

@@ -67,6 +67,8 @@ static void s3_io_thread_wakeup_cb(struct ev_loop *loop, ev_io *w, int revents) 
     S3IOThread *ioth = (S3IOThread*)w->data;
     S3ListHead request_list;
 
+    log_debug("ioth wakeup, tid=%d", ioth->tid);
+
     pthread_spin_lock(&ioth->pthread_lock);
     s3_list_movelist(&ioth->request_list, &request_list);
     pthread_spin_unlock(&ioth->pthread_lock);
@@ -94,6 +96,7 @@ static int s3_io_thread_init(S3IOThread *ioth, int id, S3IOHandler *handler) {
 
     ioth->thread_watcher.data = ioth;
     ev_async_init(&ioth->thread_watcher, s3_io_thread_wakeup_cb);
+    ev_async_start(ioth->loop, &ioth->thread_watcher);
 
     return 0;
 }

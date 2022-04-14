@@ -11,11 +11,11 @@ int s3_handle_compute_add(S3Request *r) {
 
     S3AddReq *add_req = s3_add_req__unpack(NULL, header->data_len, p->data);
     int sum = add_req->a + add_req->b;
-    log_info("-----------------------------------------------------\
+    log_info("-A----------------------------------------------------\
             do add, a=%ld, b=%ld, sum=%d", add_req->a, add_req->b, sum);
     s3_add_req__free_unpacked(add_req, NULL);
 
-    //s3_handle_rpc_compute_add_resp(r, S3_OK, sum);
+    s3_handle_rpc_compute_add_resp(r, S3_OK, sum);
 
     return S3_OK;
 }
