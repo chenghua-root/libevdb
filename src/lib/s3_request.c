@@ -1,8 +1,10 @@
 #include "lib/s3_request.h"
+
 #include "lib/s3_error.h"
+#include "lib/s3_malloc.h"
 
 S3Request *s3_request_construct() {
-    S3Request *r = malloc(sizeof(S3Request));
+    S3Request *r = s3_malloc_(S3_MOD_REQUEST, sizeof(S3Request));
     if (r != NULL) {
         *r = (S3Request)s3_request_null;
     }
@@ -12,7 +14,7 @@ S3Request *s3_request_construct() {
 void s3_request_destruct(S3Request *r) {
     if (r != NULL) {
         s3_request_destroy(r);
-        free(r);
+        s3_free_(S3_MOD_REQUEST, r);
     }
 }
 

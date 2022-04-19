@@ -6,17 +6,17 @@
 
 int main(int argc, char *argv[]) {
     int ret = S3_OK;
-    ret = s3_init_log();
+    ret = s3_init_log(LOG_INFO);
     if (ret != S3_OK) {
         printf("init log fail"); exit(1);
     }
 
-    ret = s3_init_net();
+    ret = s3_init_net(2/*io thread cnt*/);
     if (ret != S3_OK) {
         log_fatal("init net fail"); exit(1);
     }
 
-    ret = s3_start_worker_threads();
+    ret = s3_start_worker_threads(2/*worker thread cnt*/);
     if (ret != S3_OK) {
         log_fatal("init work threads fail"); exit(1);
     }
@@ -38,6 +38,8 @@ int main(int argc, char *argv[]) {
     }
 
     s3_global_destroy();
+
+    s3_print_mem_usage();
 
     return 0;
 }

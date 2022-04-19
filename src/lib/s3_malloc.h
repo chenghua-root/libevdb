@@ -26,6 +26,12 @@
   _render(S3_MOD_THREADS_QUEUE)                               \
   _render(S3_MOD_QUEUE_WORKER_ARG)                            \
   _render(S3_MOD_THREADS_TASK)                                \
+  _render(S3_MOD_PACKET)                                      \
+  _render(S3_MOD_REQUEST)                                     \
+  _render(S3_MOD_MESSAGE)                                     \
+  _render(S3_MOD_CONNECTION)                                  \
+                                                              \
+  _render(S3_MOD_S3IO)                                        \
   _render(S3_MOD_MAX)
 
 enum S3ModID {

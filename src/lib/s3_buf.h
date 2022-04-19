@@ -20,14 +20,15 @@ typedef struct S3Buf S3Buf;
 typedef void (*S3BufCleanupFunc)(S3Buf *, void *);
 struct S3Buf {
     int64_t len;
-    int8_t data_owned;  // = 1 data是自己申请的，= 0 data是别人的
-    char *data;
-    char *left;
-    char *right;
+    int8_t  data_owned;  // = 1 data是自己申请的，= 0 data是别人的
+    char    *data;
+    char    *left;
+    char    *right;
 
     S3ListHead       node;
     S3BufCleanupFunc cleanup_func;
     void             *cleanup_args;
+    uint8_t          inited_;
 };
 
 #define s3_buf_null {          \
@@ -39,6 +40,7 @@ struct S3Buf {
     .node = s3_list_head_null, \
     .cleanup_func = NULL,      \
     .cleanup_args = NULL,      \
+    .inited_ = 0,              \
 }
 
 S3Buf *s3_buf_construct();
@@ -46,7 +48,7 @@ void s3_buf_destruct(S3Buf *b);
 int s3_buf_init(S3Buf *b, int64_t len);
 void s3_buf_destroy(S3Buf *b);
 
-int s3_buf_init_with_data(S3Buf *b, char *data, int64_t data_len);
+int s3_buf_init_with_data(S3Buf *b, char *data, int64_t data_len, uint8_t data_owned);
 
 static inline int64_t s3_buf_consumed_size(const S3Buf *b) {
   return b->left - b->data;

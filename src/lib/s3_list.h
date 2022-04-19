@@ -20,7 +20,9 @@ struct S3ListHead {
 
 #define s3_list_inited(list) ((list) != NULL && (list)->next != NULL && (list)->prev != NULL)
 #define S3_LIST_HEAD_INIT(name) { .next = &(name), .prev = &(name) }
+#define S3_LIST_INIT(name) S3_LIST_HEAD_INIT(name)
 #define s3_list_head_null {.next = NULL, .prev = NULL }
+#define s3_list_null s3_list_head_null
 
 #define S3LISTHEAD(name) \
   struct S3ListHead name = S3_LIST_HEAD_INIT(name)

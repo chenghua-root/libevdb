@@ -16,7 +16,7 @@ then
   rm bin -rf && mkdir -p bin
 
   (pushd build                                          \
-      && cmake .. -DCMAKE_BUILD_TYPE="Release"          \
+      && cmake .. -DCMAKE_BUILD_TYPE=""                 \
       && make -j2                                       \
       && popd) || die make "build"
   echo -e "\033[33m end compile \033[0m"

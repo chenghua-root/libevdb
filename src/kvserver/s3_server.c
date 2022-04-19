@@ -23,8 +23,8 @@ static void s3_log_lock(bool lock, void *udata) {
     }
 }
 
-int s3_init_log() {
-    log_set_level(0);
+int s3_init_log(int level) {
+    log_set_level(level);
     log_set_quiet(false); // false: 同步输出到屏幕; true: 只输出到文件
 
     pthread_mutex_init(&MUTEX_LOG, NULL);
@@ -56,11 +56,12 @@ static void s3_destroy_log() {
 }
 
 /*****************************s3_init_net***************************/
-int s3_init_net() {
+int s3_init_net(int io_thread_cnt) {
     S3IOHandler *io_handler = &s3_g.io_handler;
     io_handler->process = s3_handle_request;
+    io_handler->close   = s3_io_connection_close;
 
-    s3_g.s3io = s3_io_create(2, io_handler);
+    s3_g.s3io = s3_io_create(io_thread_cnt, io_handler);
 
     log_info("init net succ...");
 
@@ -72,39 +73,44 @@ int s3_start_net() {
 }
 
 static void s3_destroy_net() {
-    s3_io_destroy(s3_g.s3io);
+    s3_io_desconstruct(s3_g.s3io);
+    s3_g.s3io = NULL;
 }
 
 /*****************************s3_init_worker***************************/
-int s3_start_worker_threads() {
+int s3_start_worker_threads(int worker_cnt) {
     int ret = S3_OK;
     s3_g.cmpt_workers = s3_threads_queue_construct();
-    ret = s3_threads_queue_init(s3_g.cmpt_workers, NULL, 4, S3_THREADS_QUEUE_WAKEUP_RR);
+    ret = s3_threads_queue_init(s3_g.cmpt_workers, NULL, worker_cnt, S3_THREADS_QUEUE_WAKEUP_RR);
     assert(ret == S3_OK);
     return ret;
 }
 
 /****************************s3_global_destroy**************************/
 void s3_global_destroy() {
+    s3_threads_queue_destruct(s3_g.cmpt_workers);
+    s3_g.cmpt_workers = NULL;
+
     s3_destroy_net();
 
     s3_destroy_log();
 }
 
 /*******************************s3_signal*****************************/
-static void s3_signal_handler_quit(int sig) {
-    log_info("receive SIGTERM signal, signal num=%d", sig);
-    s3_g.stop_flag = 1;
-}
-
 static void s3_signal_handler_interrupt(int sig) {
     log_info("receive SIGINT signal, signal num=%d", sig);
     s3_g.stop_flag = 1;
 }
 
+static void s3_signal_handler_quit(int sig) {
+    log_info("receive SIGTERM signal, signal num=%d", sig);
+    s3_g.stop_flag = 1;
+}
+
 static void s3_signal_handler_print_stat(int sig) {
     log_info("receive self define(print stat) signal, signal num=%d", sig);
-    log_info("total connection count=%ld", s3_g.s3io->conn_cnt);
+    log_info("recved connection cnt=%ld", s3_g.s3io->recved_conn_cnt);
+    s3_io_print_stat(s3_g.s3io);
     s3_print_mem_usage();
 }
 
@@ -112,8 +118,8 @@ struct {
     int sig;
     __sighandler_t handler;
 } s3_signal_table[] = {
-    {SIGTERM, s3_signal_handler_quit},
-    {SIGINT,  s3_signal_handler_interrupt},
+    {SIGINT,  s3_signal_handler_interrupt},  // 2
+    {SIGTERM, s3_signal_handler_quit},       // 15
     {41,      s3_signal_handler_print_stat}, // 自定义信号, kill -41 ${pid}
 };
 

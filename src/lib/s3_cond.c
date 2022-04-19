@@ -69,7 +69,7 @@ int s3_cond_timedwait(S3Cond *cond, int64_t abs_wakeup_us) {
   int ret = S3_OK;
 
   ts.tv_sec = abs_wakeup_us / (1000 * 1000);
-  ts.tv_nsec = (abs_wakeup_us % (1000 * 1000))  * 1000;
+  ts.tv_nsec = (abs_wakeup_us % (1000 * 1000)) * 1000;
 
   pthread_mutex_lock(&cond->mtx_);
   while (S3_COND_WAKING_UP != s3_atomic_cmp_swap(&cond->state_,

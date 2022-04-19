@@ -6,11 +6,11 @@
 
 typedef struct S3Request S3Request;
 struct S3Request {
+    S3ListHead request_list_node;
+
     S3Packet   *in_packet;
     S3Packet   *out_packet;
-    S3List     *out_buf_list;
 
-    S3ListHead request_list_node;
     void       *message;
 
     // TODO: recv_time;
@@ -26,5 +26,7 @@ S3Request *s3_request_construct();
 void s3_request_destruct(S3Request *r);
 int s3_request_init(S3Request *r);
 void s3_request_destroy(S3Request *r);
+
+int s3_request_done(S3Request *r);
 
 #endif

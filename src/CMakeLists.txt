@@ -2,6 +2,11 @@ set(CMAKE_C_FLAGS "-std=gnu99")
 
 message("build log level release level " ${RELEASE_LEVEL} " debug level " ${DEBUG_LEVEL})
 
+if("${CMAKE_BUILD_TYPE}" STREQUAL "")
+    set(CMAKE_CXX_FLAGS_UNITTEST "$ENV{CXXFLAGS} -O0 -ggdb -DDEBUG -DLIBEVKV_LOG_LEVEL=${DEBUG_LEVEL}")
+    set(CMAKE_C_FLAGS_UNITTEST "$ENV{CFLAGS} -O0 -ggdb -DDEBUG -DLIBEVKV_LOG_LEVEL=${DEBUG_LEVEL}")
+endif()
+
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
     set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O2 -finline-limit=10000 -DNDEBUG -DLIBEVKV_LOG_LEVEL=${RELEASE_LEVEL}")
     set(CMAKE_C_FLAGS_RELEASE "$ENV{CFLAGS} -O2 -finline-limit=10000 -DNDEBUG -DLIBEVKV_LOG_LEVEL=${RELEASE_LEVEL}")
@@ -28,3 +33,4 @@ add_subdirectory (third/ctest)
 add_subdirectory (third/logc)
 add_subdirectory (kvclient)
 add_subdirectory (kvserver)
+add_subdirectory (kvtest)

@@ -1,19 +1,21 @@
 #include "s3_handle_rpc.h"
 
 #include "lib/s3_error.h"
-#include "lib/s3_packet.pb-c.h"
 #include "lib/s3_io.h"
+#include "lib/s3_malloc.h"
+#include "lib/s3_packet.pb-c.h"
 #include "lib/s3_rpc.h"
 
 int s3_handle_rpc_send_response(S3Request *r, int32_t pcode, uint64_t session_id,
                          int64_t time_out, S3RpcSerializePacket *spacket) {
+
     size_t data_len = spacket->size_func(spacket->packet);
-    void *data = malloc(data_len);
+    void *data = s3_malloc_(S3_MOD_BUF_DATA, data_len);
     size_t pack_len = spacket->serialize_func(spacket->packet, data);
     assert(data_len == pack_len);
 
     S3Packet *p = s3_packet_construct();
-    int ret = s3_packet_init(p, pcode, session_id, time_out, data_len, data);
+    int ret = s3_packet_init(p, pcode, session_id, time_out, data, data_len, 1);
     r->out_packet = p;
 
     s3_io_thread_add_resp_request(r);

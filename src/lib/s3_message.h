@@ -18,15 +18,15 @@ enum S3MsgReadStatus {
 };
 
 #define S3_MSG_BUF_LEN     (8*1024*1024)
-#define S3_MSG_BUF_MIN_LEN 1024
+#define S3_MSG_BUF_MIN_LEN (1024)
 
 typedef struct S3Message S3Message;
 struct S3Message {
-  S3Buf                  *in_buf;
+  S3ListHead             message_list_node;
 
+  S3Buf                  *recv_buf;
   S3MsgReadStatus        read_status;
   uint64_t               next_read_len;
-  S3ListHead             message_list_node;
 
   S3List                 request_list;
   uint32_t               request_cnt;
@@ -37,8 +37,13 @@ struct S3Message {
 };
 
 #define s3_message_null {                   \
-    .in_buf = NULL,                         \
+    .message_list_node = s3_list_head_null, \
+    .recv_buf = NULL,                       \
     .read_status = S3_MSG_READ_STATUS_INIT, \
+    .next_read_len = 0,                     \
+    .request_list = s3_list_null,           \
+    .request_cnt = 0,                       \
+    .request_done_cnt = 0,                  \
     .conn = NULL,                           \
 }
 
@@ -50,6 +55,6 @@ void s3_message_destroy(S3Message *m);
 S3Message *s3_message_create();
 S3Message *s3_message_create_with_old(S3Message *old_msg);
 
-void s3_message_try_destroy(S3Message *m);
+void s3_message_try_destruct(S3Message *m);
 
 #endif

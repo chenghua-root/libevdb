@@ -12,6 +12,7 @@
   _render(S3_ERR_INVALID_RPC)                                                 \
   _render(S3_ERR_NOT_FOUND)                                                   \
   _render(S3_ERR_NET_AGAIN)                                                   \
+  _render(S3_ERR_NET_ABORT)                                                   \
   _render(S3_ERR_INIT_TWICE)                                                  \
   _render(S3_ERR_OUT_OF_MEM)                                                  \
   _render(S3_ERR_TIMEOUT)
@@ -24,6 +25,7 @@ enum S3Error {
    * Start internal error number from -1000 in order to avoid overriding system
    * errno range(-1 to -122).
    */
+  _S3_ERR_START = -1001,
   _errs(_as_const)
 };
 
