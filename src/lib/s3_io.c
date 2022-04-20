@@ -11,6 +11,7 @@
 #include "lib/s3_packet.h"
 #include "lib/s3_pthread.h"
 #include "lib/s3_socket.h"
+#include "lib/s3_utility.h"
 
 #define S3_IOTH_WITH_REQUEST(r) ((S3IOThread*)((S3Connection*)((S3Message*)r->message)->conn)->ioth)
 
@@ -56,20 +57,20 @@ static void s3_pipe_recv_socket_cb(struct ev_loop *loop, ev_io *w, int revents) 
     assert(ret == sizeof(int));
     log_info("read socket fd=%d, dispatch io thread id=%d", socket_fd, ioth->id);
 
-    S3Connection *conn = s3_connection_construct();
-    s3_connection_init(conn, ioth->loop, socket_fd);
-    conn->handler = ioth->handler;
-    conn->ioth = ioth;
-    s3_list_add_tail(&conn->conn_list_node, &ioth->conn_list);
+    S3Connection *c = s3_connection_construct();
+    s3_connection_init(c, ioth->loop, socket_fd);
+    c->handler = ioth->handler;
+    c->ioth = ioth;
+    s3_list_add_tail(&c->conn_list_node, &ioth->conn_list);
     ioth->conn_cnt++;
 
-    conn->read_watcher.data = conn;
-    ev_io_init(&conn->read_watcher, s3_connection_recv_socket_cb, socket_fd, EV_READ);
+    c->read_watcher.data = c;
+    ev_io_init(&c->read_watcher, s3_connection_recv_socket_cb, socket_fd, EV_READ);
 
-    conn->write_watcher.data = conn;
-    ev_io_init(&conn->write_watcher, s3_connection_write_socket_cb, socket_fd, EV_WRITE);
+    c->write_watcher.data = c;
+    ev_io_init(&c->write_watcher, s3_connection_write_socket_cb, socket_fd, EV_WRITE);
 
-    ev_io_start(loop, &conn->read_watcher);
+    ev_io_start(loop, &c->read_watcher);
 }
 
 static void s3_io_thread_wakeup_cb(struct ev_loop *loop, ev_io *w, int revents) {
@@ -132,10 +133,10 @@ static int s3_io_thread_init(S3IOThread *ioth, int id, S3IOHandler *handler) {
 }
 
 static void s3_io_thread_destroy(S3IOThread *ioth) {
-    S3Connection *conn = NULL, *dummy;
-    s3_list_for_each_entry_safe(conn, dummy, &ioth->conn_list, conn_list_node) {
-        s3_list_del(&conn->conn_list_node);
-        s3_connection_destruct(conn);
+    S3Connection *c = NULL, *dummy;
+    s3_list_for_each_entry_safe(c, dummy, &ioth->conn_list, conn_list_node) {
+        s3_list_del(&c->conn_list_node);
+        s3_connection_destruct(c);
     }
 
     // make sure work thread has exited
@@ -163,7 +164,10 @@ static void s3_io_thread_destroy(S3IOThread *ioth) {
 static void *s3_io_thread_start_rontine(void *arg) {
     S3IOThread *ioth = (S3IOThread*)arg;
 
-    int ret = ev_run(ioth->loop, 0);
+    int ret = s3_cpu_affinity();
+    assert(ret == S3_OK);
+
+    ret = ev_run(ioth->loop, 0);
     log_info("io thread ev run over, id=%d, ret=%d", ioth->id, ret);
 
     return NULL;

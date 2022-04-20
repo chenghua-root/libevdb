@@ -10,6 +10,7 @@
 #include "lib/s3_buf.h"
 #include "lib/s3_define.h"
 #include "lib/s3_error.h"
+#include "lib/s3_conf_define.h"
 
 int s3_socket_set_non_blocking(int fd) {
     int flags = 1;

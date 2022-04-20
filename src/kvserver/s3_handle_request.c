@@ -56,10 +56,13 @@ static void s3_handle_do_request_cb(void *arg) {
             ret = s3_handle_compute_add(r);
             break;
         case S3_PACKET_CODE_SUB:
+            ret = s3_handle_compute_sub(r);
             break;
         case S3_PACKET_CODE_MUL:
+            ret = s3_handle_compute_mul(r);
             break;
         case S3_PACKET_CODE_DIV:
+            ret = s3_handle_compute_div(r);
             break;
         default:
             log_error("invalid pcode=%ld", pcode);

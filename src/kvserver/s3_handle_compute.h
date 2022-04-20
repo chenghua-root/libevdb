@@ -5,4 +5,10 @@
 
 int s3_handle_compute_add(S3Request *r);
 
+int s3_handle_compute_sub(S3Request *r);
+
+int s3_handle_compute_mul(S3Request *r);
+
+int s3_handle_compute_div(S3Request *r);
+
 #endif

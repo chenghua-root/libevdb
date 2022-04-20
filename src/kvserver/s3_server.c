@@ -110,8 +110,8 @@ static void s3_signal_handler_quit(int sig) {
 static void s3_signal_handler_print_stat(int sig) {
     log_info("receive self define(print stat) signal, signal num=%d", sig);
     log_info("recved connection cnt=%ld", s3_g.s3io->recved_conn_cnt);
-    s3_io_print_stat(s3_g.s3io);
     s3_print_mem_usage();
+    s3_io_print_stat(s3_g.s3io);
 }
 
 struct {

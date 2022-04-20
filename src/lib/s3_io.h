@@ -64,7 +64,7 @@ void s3_io_start_run(S3IO *s3io);
 
 void s3_io_thread_add_resp_request(S3Request *r);
 
-void s3_io_connection_close(void *conn);
+void s3_io_connection_close(void *c);
 
 /*
  * NOTICE: not safe

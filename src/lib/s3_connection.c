@@ -37,38 +37,52 @@ void s3_connection_destruct(S3Connection *c) {
     }
 }
 
-int s3_connection_init(S3Connection *conn, struct ev_loop *loop, int fd) {
+int s3_connection_init(S3Connection *c, struct ev_loop *loop, int fd) {
     s3_socket_set_non_blocking(fd);
 
-    conn->loop          = loop;
-    conn->fd            = fd;
-    s3_list_head_init(&conn->conn_list_node);
-    s3_list_head_init(&conn->write_list_node);
-    s3_list_init(&conn->message_list);
-    s3_list_init(&conn->output_buf_list);
+    c->loop          = loop;
+    c->fd            = fd;
+    s3_list_head_init(&c->conn_list_node);
+    s3_list_head_init(&c->write_list_node);
+    s3_list_init(&c->message_list);
+    s3_list_init(&c->output_buf_list);
 
     return S3_OK;
 }
 
-void s3_connection_destroy(S3Connection *conn) {
-    if (conn != NULL) {
-        ev_io_stop(conn->loop, &conn->read_watcher);
-        ev_io_stop(conn->loop, &conn->write_watcher);
-        close(conn->fd);
+void s3_connection_destroy(S3Connection *c) {
+    if (c != NULL) {
+
+#ifdef LIBEVKV_UNIT_TEST
+        log_info("unit test\n");
+        if (c->loop != NULL) {
+            ev_io_stop(c->loop, &c->read_watcher);
+            ev_io_stop(c->loop, &c->write_watcher);
+        }
+        if (c->fd >= 0) {
+            close(c->fd);
+        }
+#else
+        ev_io_stop(c->loop, &c->read_watcher);
+        ev_io_stop(c->loop, &c->write_watcher);
+
+        close(c->fd);
+#endif
 
         log_info("destroy connection, fd=%d, recv total request cnt=%ld",
-                 conn->fd, conn->request_total_cnt);
-        conn->fd = -1;
-        conn->closed = 1;
+                 c->fd, c->request_total_cnt);
+        c->loop = NULL;
+        c->fd = -1;
+        c->closed = 1;
 
         S3Buf *b, *dummy_buf;
-        s3_list_for_each_entry_safe(b, dummy_buf, &conn->output_buf_list, node) {
+        s3_list_for_each_entry_safe(b, dummy_buf, &c->output_buf_list, node) {
             s3_list_del(&b->node);
             s3_buf_destruct(b);
         }
 
         S3Message *m, *dummy;
-        s3_list_for_each_entry_safe(m, dummy, &conn->message_list, message_list_node) {
+        s3_list_for_each_entry_safe(m, dummy, &c->message_list, message_list_node) {
             s3_list_del(&m->message_list_node);
             s3_message_destruct(m);
         }
@@ -157,8 +171,10 @@ void s3_connection_recv_socket_cb(struct ev_loop *loop, ev_io *w, int revents) {
         if (n == S3_ERR_NET_AGAIN) {
             return;
         }
+        // connection reset by peer
         log_info("connection read fail. fd=%d, ret=%d, errno=%d", c->fd, n, errno);
         (c->handler->close)(c);
+        return;
     } else if (n == 0) {
         log_info("peer connection close. fd=%d", c->fd);
         (c->handler->close)(c);
@@ -236,12 +252,12 @@ void s3_connnection_resp_request(S3List *request_list) {
     s3_list_for_each_entry_safe(c, dummy_conn, &write_conn_list, write_list_node) {
         s3_list_del(&c->write_list_node);
         ret = s3_connection_write_socket(c);
+        if (c->closed) {
+            (c->handler->close)(c);
+            continue; // would not send resp when socket is half close
+        }
         if (ret == S3_ERR_NET_ABORT) {
             log_info("conn write error, try destruct conn.");
-            (c->handler->close)(c);
-            continue;
-        }
-        if (c->closed) {
             (c->handler->close)(c);
             continue;
         }

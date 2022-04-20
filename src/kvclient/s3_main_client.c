@@ -93,13 +93,21 @@ static void *recv_routine(void *args) {
             }
             switch(p->header.pcode) {
                 case S3_PACKET_CODE_ADD_RESP:
-                    {
-                        S3AddResp *add_resp = s3_add_resp__unpack(NULL, p->header.data_len, p->data_buf->data);
-                        //log_info("add resp. session_id=%ld result=%d val=%ld\n", \
-                                  p->header.session_id, add_resp->result, add_resp->val);
-                        s3_add_resp__free_unpacked(add_resp, NULL);
-                    }
+                {
+                    S3AddResp *add_resp = s3_add_resp__unpack(NULL, p->header.data_len, p->data_buf->data);
+                    //log_info("add resp. session_id=%ld result=%d val=%ld\n", \
+                              p->header.session_id, add_resp->result, add_resp->val);
+                    s3_add_resp__free_unpacked(add_resp, NULL);
                     break;
+                }
+                case S3_PACKET_CODE_MUL_RESP:
+                {
+                    S3MulResp *resp = s3_mul_resp__unpack(NULL, p->header.data_len, p->data_buf->data);
+                    log_info("mul resp. session_id=%ld result=%d val=%ld\n", \
+                              p->header.session_id, resp->result, resp->val);
+                    s3_mul_resp__free_unpacked(resp, NULL);
+                    break;
+                }
             }
             s3_packet_desstruct(p);
             s3_atomic_dec(&arg->doing_req_cnt);
@@ -121,15 +129,21 @@ static void *routine(void *args) {
     int i = 0;
     for (; ; ++i) {
         S3AddReq req = S3_ADD_REQ__INIT;
+        //S3MulReq req = S3_MUL_REQ__INIT;
         req.a = i;
         req.b = i+1;
+
         size_t data_len = s3_add_req__get_packed_size(&req);
         size_t pack_len = s3_add_req__pack(&req, buf);
+        //size_t data_len = s3_mul_req__get_packed_size(&req);
+        //size_t pack_len = s3_mul_req__pack(&req, buf);
+
         assert(data_len == pack_len);
         uint64_t data_crc = s3_crc64(buf, pack_len);
 
         S3PacketHeader header = s3_packet_header_null;
         header.pcode = S3_PACKET_CODE_ADD;
+        //header.pcode = S3_PACKET_CODE_MUL;
         header.session_id = i;
         header.data_len = pack_len;
         uint64_t header_crc = s3_crc64(&header, sizeof(S3PacketHeader));
@@ -153,9 +167,10 @@ static void *routine(void *args) {
             perror("write data crc error\n");
             return NULL;
         }
-        //printf("write add req, a=%ld, b=%ld\n", req.a, req.b);
+        //printf("write req, a=%ld, b=%ld\n", req.a, req.b);
 
         uint64_t cnt = s3_atomic_inc(&arg.doing_req_cnt);
+        //sleep(2);
         if (cnt >= 20000) {
             printf("doing_req_cnt=%lu\n", cnt);
             usleep(1000000);

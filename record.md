@@ -85,10 +85,13 @@ void __attribute__((constructor(priority))) func(); 在main之前调用，可设
 void __attribute__((destructor(priority))) func(); 在main()函数退出或者调用了exit()之后调用，可设置priority，priority越小越后执行
 
 ## socket
-close(fd)后读写报错，errno=9, Bad File Descriptor
-shutdown(fd, WR)后不可写，可读
+全关闭：close(fd)
+半关闭：shutdown(fd, WR)，不可写，可读
 
-read/write fail, when errno is:
+close(fd)后本端读写fd报错，errno = 9(EBADF), Bad File Descriptor
+close(fd)后对端写数据，errno = 104(ECONNRESET), connection reset by peer
+
+读写失败时，若errno是如下两种，重试即可:
     EINTR: retry at once
     EAGAIN: retry next time
 

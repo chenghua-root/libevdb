@@ -19,10 +19,10 @@ struct S3Queue {
     .inited_=0,               \
 }
 
-#define s3_queue_for_each(_q, elt)                                            \
-    for (S3QueueEntry *elt = (_q)->head_.next,                                \
-                      *_n = elt->next;                                        \
-         elt != &(_q)->head_;                                                 \
+#define s3_queue_for_each(_q, elt)                \
+    for (S3QueueEntry *elt = (_q)->head_.next,    \
+                      *_n = elt->next;            \
+         elt != &(_q)->head_;                     \
          elt = _n, _n = elt->next )
 
 

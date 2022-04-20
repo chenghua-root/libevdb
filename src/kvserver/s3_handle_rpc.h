@@ -17,6 +17,9 @@ int s3_handle_rpc_send_response(S3Request *r, int32_t pcode,
                                 S3RpcSerializePacket *spacket);
 
 int s3_handle_rpc_compute_add_resp(S3Request *r, int result, int64_t val);
+int s3_handle_rpc_compute_sub_resp(S3Request *r, int result, int64_t val);
+int s3_handle_rpc_compute_mul_resp(S3Request *r, int result, int64_t val);
+int s3_handle_rpc_compute_div_resp(S3Request *r, int result, int64_t val);
 
 #endif
 
