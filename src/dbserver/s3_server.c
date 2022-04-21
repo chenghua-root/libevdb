@@ -31,7 +31,7 @@ int s3_init_log(int level) {
     log_set_lock(s3_log_lock, &MUTEX_LOG);
 
     FILE *g_log_fp;
-    g_log_fp = fopen("./libkv.log", "ab");
+    g_log_fp = fopen("./libevdb.log", "ab");
     if(g_log_fp == NULL) {
         return S3_FAIL;
     }

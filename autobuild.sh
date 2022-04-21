@@ -61,9 +61,9 @@ then
 
   (mkdir bin-unittest/coverage \
       && pushd bin-unittest    \
-      && ./libevkv_test        \
+      && ./libevdb_test        \
       && lcov -c -o coverage/lcov.info -d .. --rc lcov_branch_coverage=1                                       \
-      && lcov --remove coverage/lcov.info '${BASE_DIR}/src/kvclient/*' --output-file coverage/filter-lcov.info \
+      && lcov --remove coverage/lcov.info '${BASE_DIR}/src/dbclient/*' --output-file coverage/filter-lcov.info \
       && genhtml coverage/filter-lcov.info -o ${BASE_DIR}/bin-unittest/coverage                                \
       && popd) || die "run coverage"
 

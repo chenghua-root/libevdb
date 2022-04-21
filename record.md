@@ -11,9 +11,9 @@ target_link_libraries(target -ltcmalloc)
 获取svg:
 
 ```
-env HEAPCHECK=normal ./bin-unittest/libevkv_test
+env HEAPCHECK=normal ./bin-unittest/libevdb_test
 
-pprof ./bin-unittest/libevkv_test "/tmp/libevkv_test.25357._main_-end.heap" --inuse_objects --lines --heapcheck  --edgefraction=1e-10 --nodefraction=1e-10 --svg >> libevkv_mem_leak.svg
+pprof ./bin-unittest/libevdb_test "/tmp/libevdb_test.25357._main_-end.heap" --inuse_objects --lines --heapcheck  --edgefraction=1e-10 --nodefraction=1e-10 --svg >> libevdb_mem_leak.svg
 ```
 
 ### 指针检测
@@ -22,7 +22,7 @@ pprof ./bin-unittest/libevkv_test "/tmp/libevkv_test.25357._main_-end.heap" --in
 
 需注释掉-ltcmalloc
 ```
-env MALLOC_CHECK_=3 ./bin-unittest/libevkv_test
+env MALLOC_CHECK_=3 ./bin-unittest/libevdb_test
 ```
 
 ### 单测覆盖率
@@ -95,11 +95,12 @@ third/logc  https://github.com/rxi/log.c
     6      Games et. al.
     7      Miscellanea
     8      System Administration tools and Daemons
-NULL         #include <stdint.h>
-malloc()     #include <stdlib.h>
-bzero()      #include <strings.h>
-assert()     #include <assert.h>
-sleep()      #include <unistd.h>
+
+    NULL         #include <stdint.h>
+    malloc()     #include <stdlib.h>
+    bzero()      #include <strings.h>
+    assert()     #include <assert.h>
+    sleep()      #include <unistd.h>
 ```
 
 ## c语法
@@ -130,7 +131,7 @@ close(fd)后对端写数据，errno = 104(ECONNRESET), connection reset by peer
 
 ## 信号
 
-输出内存分配统计：kill -41 `ps -ef | grep bin/libevkv | grep -v grep | awk '{print $2}'`
+输出内存分配统计：kill -41 `ps -ef | grep bin/libevdb | grep -v grep | awk '{print $2}'`
 
 ```
 https://man7.org/linux/man-pages/man7/signal.7.html

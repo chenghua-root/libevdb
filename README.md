@@ -23,9 +23,9 @@
 
 ## 执行
 
-启动server: ./bin/libevkv
+启动server: ./bin/libevdb
 
-启动client: ./bin/kvclient
+启动client: ./bin/dbclient
 
 
 ## 架构
@@ -149,7 +149,7 @@ conn--|--------------------------|---------- ... -----------|
 
 输出内存分配统计：
 
-    kill -41 `ps -ef | grep bin/libevkv | grep -v grep | awk '{print $2}'`
+    kill -41 `ps -ef | grep bin/libevdb | grep -v grep | awk '{print $2}'`
 
 除了输出内存统计还会调用s3\_io\_print\_stat()输出conn, message, request等统计信息。函数会遍历conn，不是线程安全的，当有conn断开释放时存在coredump的风险。可注释掉s3\_io\_print\_stat()的调用。
 

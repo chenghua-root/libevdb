@@ -53,7 +53,7 @@ int s3_connection_init(S3Connection *c, struct ev_loop *loop, int fd) {
 void s3_connection_destroy(S3Connection *c) {
     if (c != NULL) {
 
-#ifdef LIBEVKV_UNIT_TEST
+#ifdef LIBEVDB_UNIT_TEST
         log_info("unit test\n");
         if (c->loop != NULL) {
             ev_io_stop(c->loop, &c->read_watcher);

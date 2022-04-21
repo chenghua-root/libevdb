@@ -13,10 +13,10 @@ link_directories (
 )
 
 # 指定生成目标
-add_executable(libevkv ${SRC_LIST})
+add_executable(libevdb ${SRC_LIST})
 
 # 添加链接库
-target_link_libraries(libevkv
+target_link_libraries(libevdb
     -lev
     -lprotobuf-c
     lib
@@ -24,7 +24,7 @@ target_link_libraries(libevkv
 )
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
-target_link_libraries(libevkv Threads::Threads)
+target_link_libraries(libevdb Threads::Threads)
 
 # 指定生成路径
 set (EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
