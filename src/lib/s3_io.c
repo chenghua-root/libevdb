@@ -40,7 +40,8 @@ int s3_io_init(S3IO *s3io, int io_thread_cnt) {
 }
 
 void s3_io_destroy(S3IO *s3io) {
-    s3_io_listen_destroy(s3io->listen);
+    log_info("destroy s3io");
+    s3_io_listen_destroy(&s3io->listen);
     for (int i = 0; i < s3io->io_thread_cnt; ++i) {
         s3_io_thread_destroy(s3io->ioths + i);
     }
@@ -174,6 +175,12 @@ static void *s3_io_thread_start_rontine(void *arg) {
 }
 
 S3IO *s3_io_create(int io_thread_cnt, S3IOHandler *handler) {
+    /*
+     * 向收到RST的socket读写数据，会产生SIGPIPE信号，默认情况下会终止整个程序;
+     * 设置忽略SIGPIPE后，向收到RST的socket读写数据会返回-1，并置errno=EPIPE;
+     */
+    signal(SIGPIPE, SIG_IGN);
+
     int ret = 0;
     S3IO *s3io = NULL;
 

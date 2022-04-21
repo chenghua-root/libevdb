@@ -5,6 +5,7 @@ message("build log level release level " ${RELEASE_LEVEL} " debug level " ${DEBU
 if("${CMAKE_BUILD_TYPE}" STREQUAL "")
     set(CMAKE_CXX_FLAGS_UNITTEST "$ENV{CXXFLAGS} -O0 -ggdb -DDEBUG")
     set(CMAKE_C_FLAGS_UNITTEST "$ENV{CFLAGS} -O0 -ggdb -DDEBUG")
+    set(CMAKE_*_FLAGS_UNITTEST "$ENV{CFLAGS} -O0 -ggdb -DDEBUG")
 endif()
 
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
@@ -15,6 +16,7 @@ endif()
 if("${CMAKE_BUILD_TYPE}" STREQUAL "UnitTest")
     set(CMAKE_CXX_FLAGS_UNITTEST "$ENV{CXXFLAGS} -O0 -ggdb -DDEBUG -DLIBEVDB_UNIT_TEST")
     set(CMAKE_C_FLAGS_UNITTEST "$ENV{CFLAGS} -O0 -ggdb -DDEBUG -DLIBEVDB_UNIT_TEST")
+    set(CMAKE_*_FLAGS_UNITTEST "$ENV{CFLAGS} -O0 -ggdb -DDEBUG")
 endif()
 
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Coverage")
@@ -23,8 +25,10 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Coverage")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
 endif()
 
+add_compile_definitions (LOG_USE_COLOR)
+
 if("${CMAKE_BUILD_TYPE}" STREQUAL "UnitTest" OR "${CMAKE_BUILD_TYPE}" STREQUAL "Coverage")
-    add_compile_definitions (LOG_USE_COLOR)
+    set(CMAKE_*_FLAGS_UNITTEST "$ENV{CFLAGS} -O0 -ggdb -DDEBUG")
     add_subdirectory (unittest)
 endif()
 

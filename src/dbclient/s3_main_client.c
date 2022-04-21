@@ -12,16 +12,16 @@
 #include <pthread.h>
 
 #include "third/logc/log.h"
+#include "lib/s3_atomic.h"
+#include "lib/s3_buf.h"
 #include "lib/s3_crc64.h"
 #include "lib/s3_packet.h"
 #include "lib/s3_packet.pb-c.h"
-#include "lib/s3_rpc.h"
-
 #include "lib/s3_message.h"
-#include "lib/s3_buf.h"
-#include "lib/s3_socket.h"
 #include "lib/s3_net_code.h"
-#include "lib/s3_atomic.h"
+#include "lib/s3_socket.h"
+#include "lib/s3_rpc.h"
+#include "lib/s3_timestamp.h"
 
 #define err_message(msg) \
     do {perror(msg); exit(EXIT_FAILURE);} while(0)
@@ -126,8 +126,11 @@ static void *routine(void *args) {
     pthread_t tid;
     pthread_create(&tid, NULL, recv_routine, &arg);
 
-    int i = 0;
-    for (; ; ++i) {
+    uint64_t total_per_conn = *(uint64_t*)args;
+    printf("------------------------------total_per_conn = %ld\n", total_per_conn);
+    uint64_t i = 0;
+    int64_t start_time = s3_get_timestamp();
+    for (; i < total_per_conn; ++i) {
         S3AddReq req = S3_ADD_REQ__INIT;
         //S3MulReq req = S3_MUL_REQ__INIT;
         req.a = i;
@@ -150,21 +153,33 @@ static void *routine(void *args) {
         header.header_crc = header_crc;
 
         ret = write(fd, &header, sizeof(S3PacketHeader));
-        if (ret <= 0) {
+        if (ret < 0) {
             perror("write header error\n");
+        } else if (ret == 0) {
+            log_info("socket closed");
+            close(fd);
+            return NULL;
         }
         //printf("write head size=%d\n", ret);
 
         ret = write(fd, buf, 1);
         ret = write(fd, buf+1, pack_len-1);
-        if (ret <= 0) {
+        if (ret < 0) {
             perror("write data error\n");
+        } else if (ret == 0) {
+            log_info("socket closed");
+            close(fd);
+            return NULL;
         }
         //printf("write body size=%d\n", ret+1);
 
         ret = write(fd, &data_crc, sizeof(data_crc));
-        if (ret <= 0) {
+        if (ret < 0) {
             perror("write data crc error\n");
+            return NULL;
+        } else if (ret == 0) {
+            log_info("socket closed");
+            close(fd);
             return NULL;
         }
         //printf("write req, a=%ld, b=%ld\n", req.a, req.b);
@@ -172,17 +187,22 @@ static void *routine(void *args) {
         uint64_t cnt = s3_atomic_inc(&arg.doing_req_cnt);
         //sleep(2);
         if (cnt >= 20000) {
-            printf("doing_req_cnt=%lu\n", cnt);
+            //printf("doing_req_cnt=%lu\n", cnt);
             usleep(1000000);
         }
     }
+    float spend_sec = (float)(s3_get_timestamp() - start_time) / 1000000;
+    printf("spend time second=%f\n", spend_sec);
+    int64_t iops = total_per_conn / spend_sec;
+    printf("iops=%ld\n", iops);
 }
 
 int main() {
-    pthread_t pids[4];
+    pthread_t pids[2];
 
+    uint64_t total_per_conn = 3*1000*1000;
     for (int i = 0; i < sizeof(pids) / sizeof(pthread_t); ++i) {
-        pthread_create(pids + i, NULL, routine, 0);
+        pthread_create(pids + i, NULL, routine, &total_per_conn);
     }
 
     for (int i = 0; i < sizeof(pids) / sizeof(pthread_t); ++i) {

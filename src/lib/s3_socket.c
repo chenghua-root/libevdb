@@ -55,6 +55,7 @@ int s3_socket_read(int fd, char *buf, int size) {
   } while (n == -1 && errno == EINTR);
 
   if (n < 0) {
+    log_debug("socket read error. ret=%d, errno=%d", n, errno);
     n = ((errno == EAGAIN) ? S3_ERR_NET_AGAIN : S3_ERR_NET_ABORT);
   }
 
@@ -104,7 +105,7 @@ int s3_socket_write(int fd, S3List *buf_list) {
 
     ret = s3_socket_writev(fd, iovs, cnt);
     if (ret < 0) {
-        log_error("socket write error. ret=%d, errno=%d", ret, errno);
+        log_debug("socket write error. ret=%d, errno=%d", ret, errno);
         ret = ((errno == EAGAIN) ? S3_ERR_NET_AGAIN : S3_ERR_NET_ABORT);
         return ret;
     }

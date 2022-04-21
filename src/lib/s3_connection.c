@@ -54,7 +54,7 @@ void s3_connection_destroy(S3Connection *c) {
     if (c != NULL) {
 
 #ifdef LIBEVDB_UNIT_TEST
-        log_info("unit test\n");
+        log_info("unit test");
         if (c->loop != NULL) {
             ev_io_stop(c->loop, &c->read_watcher);
             ev_io_stop(c->loop, &c->write_watcher);
@@ -172,7 +172,6 @@ void s3_connection_recv_socket_cb(struct ev_loop *loop, ev_io *w, int revents) {
             return;
         }
         // connection reset by peer
-        log_info("connection read fail. fd=%d, ret=%d, errno=%d", c->fd, n, errno);
         (c->handler->close)(c);
         return;
     } else if (n == 0) {
@@ -277,7 +276,6 @@ static int s3_connection_write_socket(S3Connection *c) {
 
     int ret = S3_OK;
     ret = s3_socket_write(c->fd, &c->output_buf_list);
-    log_debug("socket write, ret=%d", ret);
     if (ret < 0 && ret != S3_ERR_NET_AGAIN) {
         log_error("socket write fail, ret=%d", ret);
         return S3_ERR_NET_ABORT;

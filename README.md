@@ -25,7 +25,24 @@
 
 启动server: ./bin/libevdb
 
-启动client: ./bin/dbclient
+启动client: ./bin/libevdbclient
+
+## 测试结果
+
+测试环境使用阿里云ECS服务器
+
+```
+CPU: 2 * Intel(R) Xeon(R) Platinum 8269CY CPU @ 2.50GHz
+内存: 2GB
+```
+
+服务端两个IO线程，两个worker线程
+
+客户端两个发送线程，两个接收线程，采用流水模式
+
+Release编译模式下：qps为55000
+
+非Release编译模式下：qps为33000
 
 
 ## 架构
@@ -149,7 +166,7 @@ conn--|--------------------------|---------- ... -----------|
 
 输出内存分配统计：
 
-    kill -41 `ps -ef | grep bin/libevdb | grep -v grep | awk '{print $2}'`
+    kill -41 `ps -ef | grep -w bin/libevdb | grep -v grep | awk '{print $2}'`
 
 除了输出内存统计还会调用s3\_io\_print\_stat()输出conn, message, request等统计信息。函数会遍历conn，不是线程安全的，当有conn断开释放时存在coredump的风险。可注释掉s3\_io\_print\_stat()的调用。
 
