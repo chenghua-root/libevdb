@@ -4,10 +4,10 @@
 #include <string.h>
 #include <time.h>
 #include <sys/time.h>
+#include "third/logc/log.h"
 #include "lib/s3_atomic.h"
 #include "lib/s3_define.h"
-#include "lib/s3_utility.h"
-#include "third/logc/log.h"
+#include "lib/s3_util.h"
 #define MEM_PRINTB_TEMPLATE "\n%-30s %10luB  %10lu  %10lu."
 #define MEM_PRINTK_TEMPLATE "\n%-30s %10.1fK  %10lu  %10lu."
 #define MEM_PRINTM_TEMPLATE "\n%-30s %10.1fM  %10lu  %10lu."
@@ -92,28 +92,28 @@ static inline void s3_print_mem_usage() {
   struct tm tm;
   gettimeofday(&tv, NULL);
   localtime_r((const time_t *)&tv.tv_sec, &tm);
-  s3_databuff_printf(buf, buf_len, &pos, "\n[%04d-%02d-%02d %02d:%02d:%02d.%06ld]======= print mem usage. =======",
+  s3_buf_printf(buf, buf_len, &pos, "\n[%04d-%02d-%02d %02d:%02d:%02d.%06ld]======= print mem usage. =======",
       tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
       tm.tm_hour, tm.tm_min, tm.tm_sec, (long)tv.tv_usec);
-  s3_databuff_printf(buf, buf_len, &pos, MEM_PRINT_HEADER_TEMPLATE,
+  s3_buf_printf(buf, buf_len, &pos, MEM_PRINT_HEADER_TEMPLATE,
       "mod name", "mem_hold", "alloc_times","free_times");
   for (int i = 0; i < (int)S3_MOD_MAX; i++) {
     const S3ModItem *item = g_mod_stats + i;
     if (item->mem_alloc >= SIZE_MB) {
-      s3_databuff_printf(buf, buf_len, &pos, MEM_PRINTM_TEMPLATE,
+      s3_buf_printf(buf, buf_len, &pos, MEM_PRINTM_TEMPLATE,
           s3_mod_str(i), item->mem_alloc/(double)SIZE_MB, item->mem_alloc_times, item->mem_free_times);
     } else if (item->mem_alloc >= SIZE_KB) {
-      s3_databuff_printf(buf, buf_len, &pos, MEM_PRINTK_TEMPLATE,
+      s3_buf_printf(buf, buf_len, &pos, MEM_PRINTK_TEMPLATE,
           s3_mod_str(i), item->mem_alloc/(double)SIZE_KB, item->mem_alloc_times, item->mem_free_times);
     } else {
-      s3_databuff_printf(buf, buf_len, &pos, MEM_PRINTB_TEMPLATE,
+      s3_buf_printf(buf, buf_len, &pos, MEM_PRINTB_TEMPLATE,
           s3_mod_str(i), item->mem_alloc, item->mem_alloc_times, item->mem_free_times);
     }
     if (item->mem_alloc_times != item->mem_free_times) {
-      s3_databuff_printf(buf, buf_len, &pos, "possible leak.");
+      s3_buf_printf(buf, buf_len, &pos, "possible leak.");
     }
   }
-  s3_databuff_printf(buf, buf_len, &pos, "\n");
+  s3_buf_printf(buf, buf_len, &pos, "\n");
   log_info(buf, &pos);
 }
 

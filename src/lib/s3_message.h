@@ -2,8 +2,9 @@
 #define S3_LIB_MESSAGE_H_
 
 #include <stdint.h>
-#include "lib/s3_list.h"
 #include "lib/s3_buf.h"
+#include "lib/s3_list.h"
+#include "lib/s3_util.h"
 
 /*
  * one S3Message has one or multi S3Packet.
@@ -46,6 +47,8 @@ struct S3Message {
     .request_done_cnt = 0,                  \
     .conn = NULL,                           \
 }
+
+S3_STRUCT_TO_CSTRING(S3Message, s3_message);
 
 S3Message *s3_message_construct();
 void s3_message_destruct(S3Message *m);

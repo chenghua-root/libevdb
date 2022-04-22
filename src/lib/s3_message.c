@@ -32,8 +32,7 @@ int s3_message_init(S3Message *m) {
 }
 
 void s3_message_destroy(S3Message *m) {
-    log_info("destroy message, request cnt=%d, done cnt=%d",
-             m->request_cnt, m->request_done_cnt);
+    log_debug("destroy message, %s", s3_message_to_cstring(m));
 
     s3_list_del(&m->message_list_node);
 
@@ -45,6 +44,15 @@ void s3_message_destroy(S3Message *m) {
     }
     s3_buf_destruct(m->recv_buf);
     m->recv_buf = NULL;
+}
+
+int s3_message_to_string(const S3Message *m, char *buf, const int64_t len, int64_t *pos) {
+  return s3_buf_printf(buf, len, pos,
+             "[read_status=%d, next_read_len=%lu, request_cnt=%u, request_done_cnt=%u]",
+             m->read_status,
+             m->next_read_len,
+             m->request_cnt,
+             m->request_done_cnt);
 }
 
 void s3_message_try_destruct(S3Message *m) {

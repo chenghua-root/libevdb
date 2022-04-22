@@ -1,4 +1,4 @@
-#include "lib/s3_utility.h"
+#include "lib/s3_util.h"
 
 #include <assert.h>
 #include <errno.h>
@@ -9,7 +9,15 @@
 #include "lib/s3_error.h"
 #include "lib/s3_atomic.h"
 
-int s3_databuff_printf(char *buf, const int64_t buf_len, int64_t* pos, const char* fmt, ...) {
+char *s3_utility_get_tostring_buf() {
+  static __thread char buffers[S3_TO_CSTRING_BUFFER_NUM][S3_TO_CSTRING_BUFFER_SIZE];
+  volatile static __thread uint64_t i = 0;
+  char *buffer = buffers[i++ % S3_TO_CSTRING_BUFFER_NUM];
+  buffer[0] = '\0';
+  return buffer;
+}
+
+int s3_buf_printf(char *buf, const int64_t buf_len, int64_t *pos, const char *fmt, ...) {
   assert(buf && pos && 0 <= *pos && *pos < buf_len);
   va_list args;
   va_start(args, fmt);

@@ -1,11 +1,13 @@
 #ifndef S3_LIB_CONNECTION_H_
 #define S3_LIB_CONNECTION_H_
 
+#include "lib/s3_request.h"      // must before lib/s3_io_handler.h
+#include "lib/s3_io_handler.h"
+
 #include <ev.h>
 #include <stdint.h>
 #include "lib/s3_list.h"
-#include "lib/s3_request.h"
-#include "lib/s3_io_handler.h"
+#include "lib/s3_util.h"
 
 #define S3_CONN_DOING_MAX_REQ_CNT 65536
 #define S3_IO_MAX_SIZE (8*1024*1024)
@@ -17,9 +19,9 @@ struct S3Connection {
   S3ListHead      write_list_node;
   S3List          message_list;
   S3List          output_buf_list;
-  uint64_t        request_doing_cnt;
-  uint64_t        request_total_cnt;
   uint64_t        message_total_cnt;
+  uint64_t        request_total_cnt;
+  uint64_t        request_doing_cnt;
 
   S3IOHandler     *handler;
 
@@ -34,14 +36,16 @@ struct S3Connection {
 #define s3_connection_null { \
     .loop = NULL,            \
     .fd = -1,                \
-    .request_doing_cnt = 0,  \
-    .request_total_cnt = 0,  \
     .message_total_cnt = 0,  \
+    .request_total_cnt = 0,  \
+    .request_doing_cnt = 0,  \
     .read_watcher = {0},     \
     .write_watcher = {0},    \
     .ioth = NULL,            \
     .closed = 0,             \
 }
+
+S3_STRUCT_TO_CSTRING(S3Connection, s3_connection);
 
 S3Connection *s3_connection_construct();
 void s3_connection_destruct(S3Connection *conn);

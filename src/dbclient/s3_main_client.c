@@ -63,7 +63,7 @@ static void *recv_routine(void *args) {
         } else if ((s3_buf_free_size(m->recv_buf) < S3_MSG_BUF_MIN_LEN) ||
                    (m->read_status == S3_MSG_READ_STATUS_AGAIN && m->next_read_len > s3_buf_free_size(m->recv_buf))) {
 
-            log_info("message free not enough, next_read_len=%ld, free size=%ld",
+            log_info("message free not enough, next_read_len=%ld, free size=%ld", \
                     m->next_read_len, s3_buf_free_size(m->recv_buf));
             S3Message *old_msg = m;
 

@@ -11,7 +11,7 @@
 #include "lib/s3_packet.h"
 #include "lib/s3_pthread.h"
 #include "lib/s3_socket.h"
-#include "lib/s3_utility.h"
+#include "lib/s3_util.h"
 
 #define S3_IOTH_WITH_REQUEST(r) ((S3IOThread*)((S3Connection*)((S3Message*)r->message)->conn)->ioth)
 

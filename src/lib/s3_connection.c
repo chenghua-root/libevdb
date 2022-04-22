@@ -52,6 +52,7 @@ int s3_connection_init(S3Connection *c, struct ev_loop *loop, int fd) {
 
 void s3_connection_destroy(S3Connection *c) {
     if (c != NULL) {
+        log_info("destroy connection, %s", s3_connection_to_cstring(c));
 
 #ifdef LIBEVDB_UNIT_TEST
         log_info("unit test");
@@ -69,8 +70,6 @@ void s3_connection_destroy(S3Connection *c) {
         close(c->fd);
 #endif
 
-        log_info("destroy connection, fd=%d, recv total request cnt=%ld",
-                 c->fd, c->request_total_cnt);
         c->loop = NULL;
         c->fd = -1;
         c->closed = 1;
@@ -88,6 +87,16 @@ void s3_connection_destroy(S3Connection *c) {
         }
 
     }
+}
+
+int s3_connection_to_string(const S3Connection *c, char *buf, const int64_t len, int64_t *pos) {
+  return s3_buf_printf(buf, len, pos,
+             "[message_total_cnt=%ld, request_total_cnt=%ld, request_doing_cnt=%ld, fd=%d, closed=%d]",
+             c->message_total_cnt,
+             c->request_total_cnt,
+             c->request_doing_cnt,
+             c->fd,
+             c->closed);
 }
 
 static int s3_connnection_request_done(S3Request *r);
@@ -139,8 +148,8 @@ static S3Message *s3_connection_get_recv_msg(S3Connection *c) {
     } else if ((s3_buf_free_size(m->recv_buf) < S3_MSG_BUF_MIN_LEN) ||
                (m->read_status == S3_MSG_READ_STATUS_AGAIN && m->next_read_len > s3_buf_free_size(m->recv_buf))) {
 
-        log_info("message free not enough, next_read_len=%ld, free size=%ld",
-                m->next_read_len, s3_buf_free_size(m->recv_buf));
+        log_debug("message free not enough, next_read_len=%ld, free size=%ld",
+                  m->next_read_len, s3_buf_free_size(m->recv_buf));
         S3Message *old_msg = m;
 
         m = s3_message_create_with_old(old_msg);
