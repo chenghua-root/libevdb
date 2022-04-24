@@ -129,6 +129,27 @@ close(fd)后对端写数据，errno = 104(ECONNRESET), connection reset by peer
     EAGAIN: retry next time
 ```
 
+## perf & 火焰图
+
+使用参考：https://www.cnblogs.com/happyliu/p/6142929.html
+
+```
+下载FlameGraph:
+    git clone https://github.com/brendangregg/FlameGraph.git
+
+记录并生成FlameGraph:
+    perf record -e cpu-clock -F 99 -p `ps -ef | grep -w bin/libevdb | grep -v grep | awk '{print $2}'` -g -- sleep 20
+    perf script -i perf.data &> perf.unfold
+    ~/git/FlameGraph/stackcollapse-perf.pl perf.unfold &> perf.folded
+    ~/git/FlameGraph/flamegraph.pl perf.folded > perf.svg
+```
+
+develop模式编译(编译非优化模式): https://workspace-ch.oss-cn-beijing.aliyuncs.com/tmp/perf.develop.svg
+
+release模式编译(编译优化模式):   https://workspace-ch.oss-cn-beijing.aliyuncs.com/tmp/perf.release.svg
+
+从火焰图可以看出编译优化模式下CPU开销主要在内存的申请和释放，与message, request, packet一次性使用释放有关，即没有使用内存池。
+
 ## 信号
 
 输出内存分配统计：kill -41 `ps -ef | grep -w bin/libevdb | grep -v grep | awk '{print $2}'`
