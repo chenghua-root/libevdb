@@ -27,6 +27,7 @@
 
 启动client: ./bin/libevdbclient
 
+
 ## 测试结果
 
 测试环境使用阿里云ECS服务器
@@ -43,6 +44,11 @@ CPU: 2 * Intel(R) Xeon(R) Platinum 8269CY CPU @ 2.50GHz
 Release编译模式下：qps为60000+
 
 非Release编译模式下：qps为35000+
+
+
+## 组件&依赖
+
+**libev, cmake, log, unit test, 单测覆盖，指针检测，内存检查, gdb, 火焰图等说明和使用参考文档record.md**
 
 
 ## 架构
@@ -193,8 +199,3 @@ S3_MOD_S3IO                             0B           1           1.
 内存使用统计是一个非常重要的用于排查问题，保证程序正确的手段。
 
 保证每一个申请的资源在使用完成后或在程序退出前都要被回收。如此，当发现存在新的资源未回收的现象时，能根据泄露的资源类别快速定位问题或发现代码中潜在的bug.
-
-
-## 组件&依赖
-
-libev, cmake, log, unit test, 单测覆盖，指针检测，内存检查, gdb等参考文档record.md

@@ -11,9 +11,21 @@ target_link_libraries(target -ltcmalloc)
 获取svg:
 
 ```
-env HEAPCHECK=normal ./bin-unittest/libevdb_test
+示例，单测中注释掉connection对象的释放:
+TEST(test_connection, connection_init) {
+    S3Connection *c = s3_connection_construct();
+    ASSERT_NE(NULL, c);
 
-pprof ./bin-unittest/libevdb_test "/tmp/libevdb_test.25357._main_-end.heap" --inuse_objects --lines --heapcheck  --edgefraction=1e-10 --nodefraction=1e-10 --svg >> libevdb_mem_leak.svg
+    ASSERT_EQ(S3_OK, s3_connection_init(c, NULL, -1));
+
+    // s3_connection_destruct(c);
+}
+
+编译后执行: env HEAPCHECK=normal ./bin-unittest/libevdb_test
+
+pprof ./bin-unittest/libevdb_test /tmp/libevdb_test.4309._main_-end.heap --inuse_objects --lines --heapcheck  --edgefraction=1e-10 --nodefraction=1e-10 --svg >> libevdb_mem_leak.svg
+
+https://workspace-ch.oss-cn-beijing.aliyuncs.com/tmp/libevdb_mem_leak.svg
 ```
 
 ### 指针检测
