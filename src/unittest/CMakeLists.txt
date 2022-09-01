@@ -11,11 +11,11 @@ add_executable(libevdb_test ${DIR_UNITTEST_SRCS})
 
 # 添加链接库
 target_link_libraries(libevdb_test
+    ctest
+    lib
     -lev
     -lprotobuf-c
     -ltcmalloc
-    ctest
-    lib
 )
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)

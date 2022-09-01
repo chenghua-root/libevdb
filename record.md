@@ -4,6 +4,8 @@
 
 编译时添加-ltcmalloc:
 
+tcmalloc安装：sudo apt -y install libgoogle-perftools-dev
+
 ```
 target_link_libraries(target -ltcmalloc)
 ```
@@ -45,6 +47,10 @@ SET(CMAKE_EXE_LINKER_FLAGS "--coverage") 等于-lgcov
 ```
 
 ## libev
+
+### 安装
+
+sudo apt-get install libev-dev
 
 ### 默认ev\_loop
 

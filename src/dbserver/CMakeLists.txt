@@ -17,10 +17,10 @@ add_executable(libevdb ${SRC_LIST})
 
 # 添加链接库
 target_link_libraries(libevdb
-    -lev
-    -lprotobuf-c
     lib
     logc
+    -lev
+    -lprotobuf-c
 )
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)

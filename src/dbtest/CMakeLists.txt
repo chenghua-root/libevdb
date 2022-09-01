@@ -9,8 +9,8 @@ link_directories (
 )
 
 target_link_libraries(libevdbtest
-    -lev
     lib
+    -lev
 )
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)

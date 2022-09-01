@@ -7,8 +7,8 @@ link_directories (
 )
 
 target_link_libraries(libevdbclient
-    -lprotobuf-c
     lib
+    -lprotobuf-c
 )
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
