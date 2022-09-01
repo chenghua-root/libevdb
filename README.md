@@ -48,7 +48,7 @@ Release编译模式下：qps为60000+
 
 ## 组件&依赖
 
-**libev, cmake, log, unit test, 单测覆盖，指针检测，内存检查, gdb, 火焰图等说明和使用参考文档record.md**
+**libev, cmake, log, unit test, 单测覆盖，指针检测，内存检查, gdb, 火焰图等组件的介绍和使用参考文档record.md**
 
 
 ## 架构
